@@ -1,0 +1,54 @@
+{
+  "name": "panel-api",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/panel-api/src",
+  "projectType": "application",
+  "tags": ["scope:panel", "type:api"],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "webpack-cli build",
+        "args": ["--node-env=production"],
+        "cwd": "apps/panel-api"
+      },
+      "configurations": {
+        "development": {
+          "args": ["--node-env=development"]
+        }
+      }
+    },
+    "serve": {
+      "continuous": true,
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
+      "dependsOn": ["build"],
+      "options": {
+        "buildTarget": "panel-api:build",
+        "runBuildTargetDependencies": false
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "panel-api:build:development"
+        },
+        "production": {
+          "buildTarget": "panel-api:build:production"
+        }
+      }
+    },
+    "prisma": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prisma",
+        "cwd": "{projectRoot}"
+      }
+    },
+    "generate-types": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prisma generate",
+        "cwd": "{projectRoot}"
+      }
+    }
+  }
+}

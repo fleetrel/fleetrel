@@ -1,0 +1,99 @@
+version: 2
+
+updates:
+  - package-ecosystem: "npm"
+    directories:
+      - "/"
+      - "/apps/*"
+      - "/libs/*"
+      - "/packages/*"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    versioning-strategy: "increase-if-necessary" # does not break the version ranges
+    labels:
+      - "dependencies"
+      - "npm"
+      - "pnpm"
+    commit-message:
+      prefix: "chore"
+      include: "scope" # adds "deps" or "deps-dev"
+
+    # Cooldown: we give new versions a chance to "settle down"
+    cooldown:
+      default-days: 3
+      semver-major-days: 14
+      semver-minor-days: 7
+      semver-patch-days: 2
+
+    # Grouping updates for fewer PRS
+    groups:
+      # Secure minor/patch updates — can be auto-measured
+      nx-core:
+        patterns:
+          - "nx"
+          - "@nx/*"
+        update-types:
+          - "minor"
+          - "patch"
+
+      typescript-eslint:
+        patterns:
+          - "typescript"
+          - "@typescript-eslint/*"
+          - "eslint"
+          - "@eslint/*"
+        update-types:
+          - "minor"
+          - "patch"
+
+      # All others minor/patch
+      npm-minor-patch:
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "nx"
+          - "@nx/*"
+          - "typescript"
+          - "@typescript-eslint/*"
+          - "eslint"
+          - "@eslint/*"
+        update-types:
+          - "minor"
+          - "patch"
+
+      # Major updates — require manual review
+      npm-major:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
+
+  # ─────────────────────────────────────────────────────
+  # GitHub Actions Updates
+  # ─────────────────────────────────────────────────────
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Europe/Moscow"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    groups:
+      actions-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+      actions-major:
+        patterns:
+          - "*"
+        update-types:
+          - "major"

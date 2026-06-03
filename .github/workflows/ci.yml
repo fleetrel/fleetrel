@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  main:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          filter: tree:0
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 11.4.0
+          run_install: false
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: "pnpm"
+
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Generate Prisma types
+        run: pnpm exec nx run panel-api:generate-types
+        env:
+          DATABASE_USER: ci
+          DATABASE_PASSWORD: ci
+          DATABASE_HOST: localhost
+          DATABASE_PORT: "5432"
+          DATABASE_NAME: ci
+
+      - name: Check (PR)
+        if: github.event_name == 'pull_request'
+        run: pnpm run check:affected:ci:pr
+
+      - name: Check (push to main)
+        if: github.event_name == 'push'
+        run: pnpm run check:affected:ci:push
+
+      - name: Fix CI (Nx Cloud)
+        if: always()
+        run: pnpm exec nx fix-ci

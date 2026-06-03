@@ -1,0 +1,26 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "rootDir": ".",
+    "sourceMap": true,
+    "declaration": false,
+    "baseUrl": ".",
+    "moduleResolution": "node",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "target": "es2015",
+    "module": "esnext",
+    "lib": ["es2021", "dom"],
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "paths": {
+      "@fleetrel/i18n": ["packages/i18n/src/index.ts"],
+      "@fleetrel/i18n/backend": ["packages/i18n/src/adapters/backend/index.ts"],
+      "@fleetrel/i18n/frontend": [
+        "packages/i18n/src/adapters/frontend/index.ts"
+      ]
+    }
+  },
+  "exclude": ["node_modules", "tmp"]
+}

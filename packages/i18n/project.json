@@ -1,0 +1,34 @@
+{
+  "name": "i18n",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/i18n/src",
+  "projectType": "library",
+  "tags": ["scope:i18n", "type:lib"],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{workspaceRoot}/dist/packages/i18n"],
+      "options": {
+        "command": "tsc -p packages/i18n/tsconfig.lib.json --outDir dist/packages/i18n",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "validate": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node -r @swc-node/register packages/i18n/scripts/validate-translations.ts",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "validate-i18n": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "nx run i18n:validate",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    }
+  }
+}
