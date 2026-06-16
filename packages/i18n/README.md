@@ -41,7 +41,13 @@ packages/i18n/
 Use the public entry point for general import convenience, and still keep narrow adapters available when needed:
 
 ```ts
-import { createTranslator, i18nConfig, TelemtI18nModule, TelemtI18nService, initFrontendI18n } from "@fleetrel/i18n"
+import {
+  createTranslator,
+  i18nConfig,
+  TelemtI18nModule,
+  TelemtI18nService,
+  initFrontendI18n,
+} from "@fleetrel/i18n"
 ```
 
 `@fleetrel/i18n` is runtime-agnostic and now re-exports the backend and frontend adapters as well.

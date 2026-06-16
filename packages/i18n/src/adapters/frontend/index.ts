@@ -20,9 +20,7 @@ export type FrontendI18nOptions = {
   >
 }
 
-export async function initFrontendI18n(
-  options: FrontendI18nOptions = {},
-): Promise<i18n> {
+export async function initFrontendI18n(options: FrontendI18nOptions = {}): Promise<i18n> {
   const instance = options.instance ?? i18next.createInstance()
   const locale = options.locale ?? fallbackLocale
   const namespaceList = options.namespaces ?? namespaces

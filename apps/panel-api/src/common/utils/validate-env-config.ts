@@ -1,9 +1,6 @@
 import { z, ZodError } from "zod"
 
-export function validateEnvConfig<T>(
-  schema: z.ZodType,
-  config: Record<string, unknown>,
-): T {
+export function validateEnvConfig<T>(schema: z.ZodType, config: Record<string, unknown>): T {
   try {
     return schema.parse(config) as T
   } catch (e) {

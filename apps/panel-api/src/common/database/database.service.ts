@@ -29,9 +29,7 @@ export class DatabaseService extends PrismaClient implements OnModuleInit {
     super({ adapter })
 
     this.connectionString = connectionString
-    this.logger.debug(
-      `Database target: ${username}@${host}:${port}/${database}`,
-    )
+    this.logger.debug(`Database target: ${username}@${host}:${port}/${database}`)
   }
 
   async onModuleInit(): Promise<void> {

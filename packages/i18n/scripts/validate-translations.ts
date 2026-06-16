@@ -4,11 +4,7 @@ import { resources } from "../src/locales"
 
 type LeafMap = Map<string, string>
 
-function flatten(
-  value: unknown,
-  prefix = "",
-  result: LeafMap = new Map(),
-): LeafMap {
+function flatten(value: unknown, prefix = "", result: LeafMap = new Map()): LeafMap {
   if (typeof value === "string") {
     result.set(prefix, value)
 
@@ -41,12 +37,7 @@ for (const namespace of namespaces) {
     const target = flatten(resources[locale][namespace])
     const missing = [...source.keys()].filter((key) => !target.has(key))
     const extra = [...target.keys()].filter((key) => !source.has(key))
-    const invalidInterpolations = findInvalidInterpolations(
-      namespace,
-      locale,
-      source,
-      target,
-    )
+    const invalidInterpolations = findInvalidInterpolations(namespace, locale, source, target)
 
     if (missing.length || extra.length || invalidInterpolations.length) {
       hasErrors = true

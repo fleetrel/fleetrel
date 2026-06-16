@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common"
+import { UsersModule } from "./users"
 
 @Module({
-  controllers: [],
+  imports: [UsersModule],
 })
 export class PanelModules {}

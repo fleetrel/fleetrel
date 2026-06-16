@@ -14,10 +14,7 @@
       "internalConsoleOptions": "neverOpen",
       "skipFiles": ["<node_internals>/**"],
       "sourceMaps": true,
-      "outFiles": [
-        "${workspaceFolder}/dist/apps/panel-api/**/*.(m|c|)js",
-        "!**/node_modules/**"
-      ]
+      "outFiles": ["${workspaceFolder}/dist/apps/panel-api/**/*.(m|c|)js", "!**/node_modules/**"]
     }
   ]
 }

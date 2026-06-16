@@ -38,11 +38,7 @@ export class TelemtI18nService {
     return this.tLocale(this.currentLocale, key, params)
   }
 
-  tLocale(
-    locale: SupportedLocale,
-    key: NamespacedKey,
-    params?: TranslationParams,
-  ): string {
+  tLocale(locale: SupportedLocale, key: NamespacedKey, params?: TranslationParams): string {
     return this.getTranslator(locale).t(key, params)
   }
 
@@ -50,17 +46,11 @@ export class TelemtI18nService {
     return this.t(key, params)
   }
 
-  scoped(
-    locale: SupportedLocale = this.currentLocale,
-    namespaces?: readonly Namespace[],
-  ) {
+  scoped(locale: SupportedLocale = this.currentLocale, namespaces?: readonly Namespace[]) {
     return this.getTranslator(locale, namespaces ?? this.defaultNamespaces)
   }
 
-  private getTranslator(
-    locale: SupportedLocale,
-    namespaces?: readonly Namespace[],
-  ) {
+  private getTranslator(locale: SupportedLocale, namespaces?: readonly Namespace[]) {
     const cacheKey = `${locale}:${namespaces?.join(",") ?? "*"}`
     const existing = this.translators.get(cacheKey)
 

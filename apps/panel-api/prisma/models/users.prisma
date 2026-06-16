@@ -1,9 +1,12 @@
-model Users {
-    id        String   @id @default(uuid())
-    email     String   @unique
-    password  String
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+model User {
+    id       String @id @default(uuid())
+    email    String @unique @map("email")
+    password String @map("password")
+
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @updatedAt @map("updated_at")
+
+    authSessions AuthSession[]
 
     @@map("users")
 }

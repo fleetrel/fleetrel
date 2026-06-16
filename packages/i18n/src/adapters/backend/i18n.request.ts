@@ -6,9 +6,7 @@ export type I18nRequest = {
   cookies?: Record<string, string | undefined>
 }
 
-export type LocaleResolver = (
-  request: I18nRequest,
-) => SupportedLocale | undefined
+export type LocaleResolver = (request: I18nRequest) => SupportedLocale | undefined
 
 export type LocaleResolutionOptions = {
   cookieName?: string
@@ -121,9 +119,7 @@ function parseCookieHeader(header: string): Record<string, string> {
   )
 }
 
-function resolveLocaleFromAcceptLanguage(
-  header: string,
-): SupportedLocale | undefined {
+function resolveLocaleFromAcceptLanguage(header: string): SupportedLocale | undefined {
   const entries = header
     .split(",")
     .map((part) => {

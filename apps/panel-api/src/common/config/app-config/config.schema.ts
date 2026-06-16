@@ -2,9 +2,7 @@ import { createZodDto } from "nestjs-zod"
 import z from "zod"
 
 export const configSchema = z.object({
-  NODE_ENV: z
-    .enum(["development", "production", "test"])
-    .default("development"),
+  NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
 
   DATABASE_HOST: z.string().nonempty("DATABASE_HOST is required"),
   DATABASE_PORT: z

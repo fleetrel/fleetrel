@@ -10,10 +10,10 @@ export function isNamespace(namespace: string): namespace is Namespace {
   return (namespaces as readonly string[]).includes(namespace)
 }
 
-export function getNamespaceResource<
-  L extends SupportedLocale,
-  N extends Namespace,
->(locale: L, namespace: N): Resources[N] {
+export function getNamespaceResource<L extends SupportedLocale, N extends Namespace>(
+  locale: L,
+  namespace: N,
+): Resources[N] {
   return resources[locale][namespace] as Resources[N]
 }
 
@@ -25,10 +25,7 @@ export function getResources(
     localeList.map((locale) => [
       locale,
       Object.fromEntries(
-        namespaceList.map((namespace) => [
-          namespace,
-          getNamespaceResource(locale, namespace),
-        ]),
+        namespaceList.map((namespace) => [namespace, getNamespaceResource(locale, namespace)]),
       ),
     ]),
   )

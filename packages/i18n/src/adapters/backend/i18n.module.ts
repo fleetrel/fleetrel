@@ -20,11 +20,7 @@ const createLocaleProvider = () => ({
   provide: TELEMT_I18N_LOCALE,
   scope: Scope.REQUEST,
   inject: [REQUEST, TELEMT_I18N_OPTIONS, TELEMT_I18N_DEFAULT_LOCALE],
-  useFactory: (
-    request: I18nRequest,
-    opts: TelemtI18nModuleOptions,
-    fallback: string,
-  ) => {
+  useFactory: (request: I18nRequest, opts: TelemtI18nModuleOptions, fallback: string) => {
     const cookieName = opts.localeCookieName ?? defaultLocaleCookieName
     const headerNames = opts.localeHeaderNames ?? [...defaultLocaleHeaderNames]
     const localeResolver = opts.localeResolver
