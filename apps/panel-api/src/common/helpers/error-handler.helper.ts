@@ -1,6 +1,6 @@
 import { InternalServerErrorException } from "@nestjs/common"
 import { TResult } from "../utils"
-import { ERRORS } from "@fleetrel/contracts"
+import { ERRORS } from "@fleetrel/contract"
 import { HttpExceptionWithErrorCodeType } from "../exceptions"
 
 export function errorHandler<T>(response: TResult<T>): T {
