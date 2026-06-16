@@ -1,8 +1,7 @@
 {
-  "name": "contracts",
+  "name": "@fleetrel/contract",
   "version": "0.0.1",
-  "private": true,
-  "type": "commonjs",
+  "private": false,
   "main": "./src/index.js",
   "types": "./src/index.d.ts",
   "dependencies": {

@@ -4,7 +4,7 @@ import { UserResponseModel } from "./models"
 import { CreateUserDto } from "./dtos"
 import { fail, ok, TResult } from "../../common/utils"
 import { Prisma } from "../../common/database"
-import { ERRORS } from "@fleetrel/contracts"
+import { ERRORS } from "@fleetrel/contract"
 import { hash, verify } from "argon2"
 import { UserEntity } from "./entities"
 
