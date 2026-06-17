@@ -2,22 +2,22 @@ import { ApiProperty } from "@nestjs/swagger"
 
 export class UserResponseModel {
   @ApiProperty({
-    description: "Уникальный идентификатор пользователя",
+    description: "Unique user ID",
   })
   public readonly id: string
 
   @ApiProperty({
-    description: "Email пользователя",
+    description: "User email address",
   })
   public readonly email: string
 
   @ApiProperty({
-    description: "Дата создания записи",
+    description: "Date the record was created",
   })
   public readonly createdAt: Date
 
   @ApiProperty({
-    description: "Дата последнего обновления записи",
+    description: "Date of last record update",
   })
   public readonly updatedAt: Date
 

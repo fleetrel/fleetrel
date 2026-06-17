@@ -20,4 +20,9 @@ export const ERRORS = {
     message: "Failed to authorization",
     httpCode: 400,
   },
+  AUTH_INVALID_CREDENTIALS: {
+    code: "AUTH_INVALID_CREDENTIALS",
+    message: "Incorrect email or password",
+    httpCode: 400,
+  },
 } as const satisfies Record<string, { code: string; message: string; httpCode: number }>

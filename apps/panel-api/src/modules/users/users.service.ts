@@ -48,10 +48,10 @@ export class UsersService {
   async findUser(email: string, password: string): Promise<TResult<UserEntity>> {
     const user = await this.userRepository.findByEmail(email)
 
-    if (!user) return fail(ERRORS.USER_NOT_FOUND)
+    if (!user) return fail(ERRORS.AUTH_INVALID_CREDENTIALS)
 
     const equalPassword = await verify(user.password, password)
-    if (!equalPassword) return fail({ message: "Пороль не верный", code: "pass" })
+    if (!equalPassword) return fail(ERRORS.AUTH_INVALID_CREDENTIALS)
 
     return ok(user)
   }

@@ -4,10 +4,7 @@ import { ERRORS } from "@fleetrel/contract"
 import { HttpExceptionWithErrorCodeType } from "../exceptions"
 
 export function errorHandler<T>(response: TResult<T>): T {
-  // Используем строгое сравнение с литералом false
   if (response.isOk === false) {
-    // TypeScript точно сузил тип до { isOk: false; code?: string; message?: string }
-
     if (!response.code) {
       throw new InternalServerErrorException("Unknown error")
     }
@@ -25,7 +22,5 @@ export function errorHandler<T>(response: TResult<T>): T {
     )
   }
 
-  // Если дошли до сюда, значит response.isOk === true
-  // TypeScript сузил тип до { isOk: true; response: T }
   return response.response
 }
