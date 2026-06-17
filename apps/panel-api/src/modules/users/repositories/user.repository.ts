@@ -1,4 +1,4 @@
-import { ICrud } from "../../../common/types/crud"
+import { ICrud } from "../../../common/types"
 import { UserEntity } from "../entities"
 import { PrismaClient } from "../../../common/database"
 import { Injectable } from "@nestjs/common"

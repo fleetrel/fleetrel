@@ -13,6 +13,18 @@ export const configSchema = z.object({
   DATABASE_USER: z.string().nonempty("DATABASE_USER is required"),
   DATABASE_PASSWORD: z.string().nonempty("DATABASE_PASSWORD is required"),
   DATABASE_NAME: z.string().nonempty("DATABASE_NAME is required"),
+
+  JWT_AUTH_SECRET: z.string().nonempty("JWT_AUTH_SECRET is required"),
+  JWT_AUTH_EXPIRES: z.string().optional().default("10m"),
+  JWT_AUTH_REFRESH_SECRET: z.string().nonempty("JWT_AUTH_REFRESH_SECRET is required"),
+  JWT_AUTH_EXPIRES_REFRESH: z.string().optional().default("30d"),
+  REFRESH_TOKEN_PEPPER: z.string().nonempty("REFRESH_TOKEN_PEPPER is required"),
+
+  SWAGGER_ENABLED: z
+    .string()
+    .optional()
+    .default("false")
+    .transform((v) => v === "true"),
 })
 
 export type ConfigSchema = z.infer<typeof configSchema>

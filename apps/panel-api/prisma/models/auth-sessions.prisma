@@ -2,7 +2,7 @@ model AuthSession {
     id     String @id @default(uuid())
     userId String @map("user_id")
 
-    refreshTokenHash String? @unique @map("refresh_token_hash")
+    refreshTokenHash String @unique @map("refresh_token_hash")
 
     // deviceType String? @map("device_type")
     // deviceOS   String? @map("device_os")

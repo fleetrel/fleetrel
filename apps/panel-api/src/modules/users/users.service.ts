@@ -2,10 +2,8 @@ import { Injectable, Logger } from "@nestjs/common"
 import { UserRepository } from "./repositories"
 import { UserResponseModel } from "./models"
 import { CreateUserDto } from "./dtos"
-import { fail, ok, TResult } from "../../common/utils"
-import { Prisma } from "../../common/database"
+import { fail, isPrismaError, ok, TResult } from "../../common/utils"
 import { ERRORS } from "@fleetrel/contract"
-import { hash, verify } from "argon2"
 import { UserEntity } from "./entities"
 
 @Injectable()
@@ -16,47 +14,33 @@ export class UsersService {
 
   async createUser(dto: CreateUserDto): Promise<TResult<UserResponseModel>> {
     try {
-      const hashedPassword = await this.passwordHash(dto.password)
-
+      this.logger.debug("creating user")
       const result = await this.userRepository.create({
         email: dto.email,
-        password: hashedPassword,
+        password: dto.password,
       })
+
       return ok(new UserResponseModel(result))
     } catch (error) {
-      this.logger.error(error)
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-        return fail(ERRORS.USER_ALREADY_EXISTS)
+      if (isPrismaError(error)) {
+        this.logger.error("Prisma error during createUser", { code: error.code })
+        if (error.code === "P2002") {
+          return fail(ERRORS.USER_ALREADY_EXISTS)
+        }
       }
-
       return fail(ERRORS.CREATE_USER_ERROR)
     }
   }
 
-  async changePassword(userId: string, newPassword: string): Promise<TResult<boolean>> {
+  async findUserById(userId: string): Promise<TResult<UserResponseModel>> {
     const user = await this.userRepository.findById(userId)
     if (!user) return fail(ERRORS.USER_NOT_FOUND)
-
-    const hashedPassword = await this.passwordHash(newPassword)
-
-    const updateUser = await this.userRepository.update({ ...user, password: hashedPassword })
-    if (!updateUser) return fail(ERRORS.USER_NOT_FOUND)
-
-    return ok(true)
+    return ok(new UserResponseModel(user))
   }
 
-  async findUser(email: string, password: string): Promise<TResult<UserEntity>> {
+  async findUserEntityByEmail(email: string): Promise<TResult<UserEntity>> {
     const user = await this.userRepository.findByEmail(email)
-
-    if (!user) return fail(ERRORS.AUTH_INVALID_CREDENTIALS)
-
-    const equalPassword = await verify(user.password, password)
-    if (!equalPassword) return fail(ERRORS.AUTH_INVALID_CREDENTIALS)
-
+    if (!user) return fail(ERRORS.USER_NOT_FOUND)
     return ok(user)
-  }
-
-  passwordHash(password: string) {
-    return hash(password)
   }
 }

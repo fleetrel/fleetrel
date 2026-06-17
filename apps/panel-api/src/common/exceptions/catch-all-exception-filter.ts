@@ -12,6 +12,7 @@ import {
   UnauthorizedException,
 } from "@nestjs/common"
 import { HttpExceptionWithErrorCodeType } from "./http-exception-with-error-code.type"
+import { BaseAppException } from "../types"
 
 @Catch()
 export class CatchAllExceptionFilter implements ExceptionFilter {
@@ -50,7 +51,7 @@ export class CatchAllExceptionFilter implements ExceptionFilter {
         code: errorCode,
         path: request.url,
         message: "[ZodValidationException] " + JSON.stringify(exception.getResponse()),
-      })
+      } as BaseAppException)
 
       response.status(status).json(exception.getResponse())
       return
@@ -61,8 +62,8 @@ export class CatchAllExceptionFilter implements ExceptionFilter {
         timestamp: new Date().toISOString(),
         path: request.url,
         message: errorMessage,
-        errorCode,
-      })
+        code: errorCode,
+      } as BaseAppException)
       return
     }
 
@@ -72,7 +73,7 @@ export class CatchAllExceptionFilter implements ExceptionFilter {
       timestamp: new Date().toISOString(),
       path: request.url,
       message: "Internal server error",
-      errorCode: "E500",
-    })
+      code: "E500",
+    } as BaseAppException)
   }
 }

@@ -1,26 +1,45 @@
 import { Logger } from "@nestjs/common"
+import { ConfigService } from "@nestjs/config"
 import { NestFactory } from "@nestjs/core"
-import { AppModule } from "./app.module"
 import { ZodValidationPipe } from "nestjs-zod"
+import cookieParser from "cookie-parser"
+import helmet from "helmet"
+import { AppModule } from "./app.module"
+import { CatchAllExceptionFilter } from "./common/exceptions"
 import { setupSwagger } from "./common/utils"
-import { CatchAllExceptionFilter, HttpExceptionFilter } from "./common/exceptions"
 
 const globalPrefix = "/api"
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule)
-  const port = process.env.PORT || 3000
+  app.use(cookieParser())
+
+  const config = app.get(ConfigService)
+  const port = config.get<number>("PORT", 3000)
+  const isProduction = config.get("NODE_ENV") === "production"
+  const isSwaggerEnabled = config.get<boolean>("SWAGGER_ENABLED")
+
+  app.use(
+    helmet({
+      // HSTS is production-only — caching "HTTPS only" on localhost breaks local dev
+      hsts: isProduction ? { maxAge: 31_536_000, includeSubDomains: true, preload: true } : false,
+      // CSP is disabled when Swagger is active — Swagger UI requires inline scripts
+      contentSecurityPolicy: isSwaggerEnabled ? false : undefined,
+    }),
+  )
 
   app.setGlobalPrefix(globalPrefix)
   app.useGlobalPipes(new ZodValidationPipe())
-  // app.useGlobalFilters(new HttpExceptionFilter())
   app.useGlobalFilters(new CatchAllExceptionFilter())
 
-  const swagPath = await setupSwagger(app, globalPrefix)
+  if (isSwaggerEnabled) {
+    const swagPath = await setupSwagger(app, globalPrefix)
+    Logger.log(`📚 Swagger: http://localhost:${port}${swagPath}`)
+  }
 
-  await app.listen(port)
-  Logger.log(`🚀 Application is running on: http://localhost:${port}${globalPrefix}`)
-  Logger.log(`📚 Swagger documentation available at: http://localhost:${port}${swagPath}`)
+  await app.listen(port, () => {
+    Logger.log(`🚀 Application running: http://localhost:${port}${globalPrefix}`)
+  })
 }
 
 bootstrap()

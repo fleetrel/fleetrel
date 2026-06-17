@@ -10,6 +10,7 @@ import {
   Logger,
 } from "@nestjs/common"
 import { HttpExceptionWithErrorCodeType } from "./http-exception-with-error-code.type"
+import { BaseAppException } from "../types"
 
 @Catch(HttpExceptionWithErrorCodeType, ZodValidationException)
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -42,23 +43,20 @@ export class HttpExceptionFilter implements ExceptionFilter {
         code: errorCode,
         path: request.url,
         message: "[ZodValidationException] " + JSON.stringify(exception.getResponse()),
-      })
+      } as BaseAppException)
 
       response.removeHeader("x-powered-by")
       response.status(status).json(exception.getResponse())
     } else {
-      this.logger.error({
+      const data: BaseAppException = {
         timestamp: new Date().toISOString(),
         code: errorCode,
         path: request.url,
         message: errorMessage,
-      })
-      response.status(status).json({
-        timestamp: new Date().toISOString(),
-        path: request.url,
-        message: errorMessage,
-        errorCode,
-      })
+      }
+
+      this.logger.error(data)
+      response.status(status).json(data)
     }
   }
 }
