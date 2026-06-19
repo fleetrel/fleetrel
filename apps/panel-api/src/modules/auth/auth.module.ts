@@ -1,15 +1,17 @@
 import { Module } from "@nestjs/common"
 import { APP_GUARD } from "@nestjs/core"
-import { PassportModule } from "@nestjs/passport"
 import { JwtModule } from "@nestjs/jwt"
-import { AuthService } from "./auth.service"
-import { AuthCookieService } from "./auth-cookie.service"
-import { AuthController } from "./auth.controller"
-import { JwtStrategy } from "./strategies"
-import { UsersModule } from "../users"
-import { SessionsModule } from "../sessions"
+import { PassportModule } from "@nestjs/passport"
+
 import { getJWTConfig } from "../../common/config"
 import { JwtAuthGuard } from "../../common/guards"
+import { SessionsModule } from "../sessions"
+import { UsersModule } from "../users"
+
+import { AuthController } from "./auth.controller"
+import { AuthService } from "./auth.service"
+import { AuthCookieService } from "./auth-cookie.service"
+import { JwtStrategy } from "./strategies"
 
 @Module({
   imports: [UsersModule, PassportModule, JwtModule.registerAsync(getJWTConfig()), SessionsModule],

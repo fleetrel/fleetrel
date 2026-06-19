@@ -1,13 +1,15 @@
 import { Body, Controller, Post, Req, Res, UnauthorizedException } from "@nestjs/common"
 import { Throttle } from "@nestjs/throttler"
 import type { Request, Response } from "express"
+
+import { THROTTLE_LIMIT, THROTTLE_TTL_MS } from "../../common/constants"
+import { Public } from "../../common/decorators"
+import { errorHandler } from "../../common/helpers"
+
 import { AuthService } from "./auth.service"
 import { AuthCookieService } from "./auth-cookie.service"
-import { SignInDto, SignUpDto } from "./dtos"
 import { AUTH_COOKIE } from "./constants"
-import { errorHandler } from "../../common/helpers"
-import { Public } from "../../common/decorators"
-import { THROTTLE_LIMIT, THROTTLE_TTL_MS } from "../../common/constants"
+import { SignInDto, SignUpDto } from "./dtos"
 
 @Controller("auth")
 export class AuthController {

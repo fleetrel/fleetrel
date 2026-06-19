@@ -1,16 +1,20 @@
-import { Injectable, Logger } from "@nestjs/common"
-import { JwtService } from "@nestjs/jwt"
-import { ConfigService } from "@nestjs/config"
-import { hash, verify } from "argon2"
 import { randomUUID } from "crypto"
+
+import { Injectable, Logger } from "@nestjs/common"
+import { ConfigService } from "@nestjs/config"
+import { JwtService } from "@nestjs/jwt"
+import { hash, verify } from "argon2"
+
 import { ERRORS } from "@fleetrel/contract"
-import { fail, isFail, ok, TResult } from "../../common/utils"
+
 import { getJWTRefreshSignConfig, getJWTRefreshVerifyConfig } from "../../common/config"
-import { UsersService } from "../users"
+import { fail, isFail, ok, TResult } from "../../common/utils"
 import { SessionsService } from "../sessions"
-import { IJWTPayload, ITokens } from "./interfaces"
-import { SignInDto, SignUpDto } from "./dtos"
+import { UsersService } from "../users"
+
 import { REFRESH_TOKEN_VERSION } from "./constants"
+import { SignInDto, SignUpDto } from "./dtos"
+import { IJWTPayload, ITokens } from "./interfaces"
 
 @Injectable()
 export class AuthService {

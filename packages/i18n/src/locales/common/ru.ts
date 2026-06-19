@@ -1,4 +1,5 @@
 import type { LocaleShape } from "../../core"
+
 import type { commonEn } from "./en"
 
 export const commonRu: LocaleShape<typeof commonEn> = {

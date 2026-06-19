@@ -1,4 +1,5 @@
 import type { Namespace, SupportedLocale } from "../../core/types"
+
 import type { LocaleResolver } from "./i18n.request"
 
 export type TelemtI18nModuleOptions = {

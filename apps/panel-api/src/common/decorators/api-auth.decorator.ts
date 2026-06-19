@@ -1,5 +1,6 @@
 import { applyDecorators } from "@nestjs/common"
 import { ApiCookieAuth } from "@nestjs/swagger"
+
 import { SWAGGER_COOKIE_SCHEME } from "../constants"
 
 /**

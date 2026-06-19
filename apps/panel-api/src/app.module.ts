@@ -1,14 +1,16 @@
 import { Module } from "@nestjs/common"
 import { APP_GUARD } from "@nestjs/core"
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler"
+import { ClsPluginTransactional } from "@nestjs-cls/transactional"
+import { TransactionalAdapterPrisma } from "@nestjs-cls/transactional-adapter-prisma"
+import { ClsModule } from "nestjs-cls"
+
 import { TelemtI18nModule } from "@fleetrel/i18n/backend"
-import { DatabaseModule, DatabaseService } from "./common/database"
+
 import { CommonConfigModule } from "./common/config"
 import { THROTTLE_LIMIT, THROTTLE_TTL_MS } from "./common/constants"
+import { DatabaseModule, DatabaseService } from "./common/database"
 import { PanelModules } from "./modules/panel.module"
-import { ClsModule } from "nestjs-cls"
-import { TransactionalAdapterPrisma } from "@nestjs-cls/transactional-adapter-prisma"
-import { ClsPluginTransactional } from "@nestjs-cls/transactional"
 
 @Module({
   imports: [

@@ -1,10 +1,13 @@
 import { Injectable, Logger } from "@nestjs/common"
-import { UserRepository } from "./repositories"
-import { UserResponseModel } from "./models"
-import { CreateUserDto } from "./dtos"
-import { fail, isPrismaError, ok, TResult } from "../../common/utils"
+
 import { ERRORS } from "@fleetrel/contract"
+
+import { fail, isPrismaError, ok, TResult } from "../../common/utils"
+
+import { CreateUserDto } from "./dtos"
 import { UserEntity } from "./entities"
+import { UserResponseModel } from "./models"
+import { UserRepository } from "./repositories"
 
 @Injectable()
 export class UsersService {

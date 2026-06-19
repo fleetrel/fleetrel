@@ -1,7 +1,9 @@
 import { Controller, Get } from "@nestjs/common"
-import { UsersService } from "./users.service"
+
 import { CurrentUser } from "../../common/decorators"
 import { errorHandler } from "../../common/helpers"
+
+import { UsersService } from "./users.service"
 
 @Controller("users")
 export class UsersController {

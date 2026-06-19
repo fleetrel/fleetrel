@@ -1,5 +1,6 @@
-import type { defaultNamespace, namespaces, supportedLocales } from "./config"
 import type { sourceResources } from "../locales/schema"
+
+import type { defaultNamespace, namespaces, supportedLocales } from "./config"
 
 export type SupportedLocale = (typeof supportedLocales)[number]
 

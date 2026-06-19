@@ -1,9 +1,10 @@
 import { Injectable, Logger, OnModuleInit } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
 import { PrismaPg } from "@prisma/adapter-pg"
-import { PrismaClient } from "./generated/client"
-import { getConnectionString, formatPgError } from "./helpers"
 import { Client } from "pg"
+
+import { PrismaClient } from "./generated/client"
+import { formatPgError, getConnectionString } from "./helpers"
 
 @Injectable()
 export class DatabaseService extends PrismaClient implements OnModuleInit {

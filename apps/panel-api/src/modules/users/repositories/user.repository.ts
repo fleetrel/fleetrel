@@ -1,11 +1,12 @@
-import { ICrud } from "../../../common/types"
-import { UserEntity } from "../entities"
-import { PrismaClient } from "../../../common/database"
 import { Injectable } from "@nestjs/common"
 import { TransactionHost } from "@nestjs-cls/transactional"
 import { TransactionalAdapterPrisma } from "@nestjs-cls/transactional-adapter-prisma"
-import { UserMapper } from "../mappers"
+
+import { PrismaClient } from "../../../common/database"
+import { ICrud } from "../../../common/types"
 import { EntityCreateInput } from "../../../common/types"
+import { UserEntity } from "../entities"
+import { UserMapper } from "../mappers"
 
 @Injectable()
 export class UserRepository implements ICrud<UserEntity> {

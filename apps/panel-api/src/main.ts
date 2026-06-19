@@ -1,9 +1,10 @@
 import { Logger } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
 import { NestFactory } from "@nestjs/core"
-import { ZodValidationPipe } from "nestjs-zod"
 import cookieParser from "cookie-parser"
 import helmet from "helmet"
+import { ZodValidationPipe } from "nestjs-zod"
+
 import { AppModule } from "./app.module"
 import { CatchAllExceptionFilter } from "./common/exceptions"
 import { setupSwagger } from "./common/utils"

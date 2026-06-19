@@ -1,12 +1,14 @@
-import i18next, { type i18n, type InitOptions } from "i18next"
 import "./i18next-types"
+
+import i18next, { type i18n, type InitOptions } from "i18next"
+
 import {
   defaultNamespace,
   fallbackLocale,
   getResources,
   i18nConfig,
-  namespaces,
   type Namespace,
+  namespaces,
   type SupportedLocale,
 } from "../../core"
 

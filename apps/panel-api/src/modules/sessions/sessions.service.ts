@@ -1,12 +1,16 @@
+import { createHmac, timingSafeEqual } from "crypto"
+
 import { Injectable, Logger } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
-import { createHmac, timingSafeEqual } from "crypto"
+
 import { ERRORS } from "@fleetrel/contract"
-import { fail, isPrismaError, ok, TResult } from "../../common/utils"
+
 import { getJWTRefreshTokenPepper } from "../../common/config"
-import { AuthSessionRepository } from "./repositories"
-import { AuthSessionEntity } from "./entities"
+import { fail, isPrismaError, ok, TResult } from "../../common/utils"
+
 import { CreateSessionDto } from "./dtos"
+import { AuthSessionEntity } from "./entities"
+import { AuthSessionRepository } from "./repositories"
 
 @Injectable()
 export class SessionsService {

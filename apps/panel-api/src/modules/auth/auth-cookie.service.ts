@@ -1,7 +1,9 @@
 import { Injectable } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
 import type { CookieOptions, Response } from "express"
+
 import { parseDuration } from "../../common/utils"
+
 import { AUTH_COOKIE, AUTH_COOKIE_PATH } from "./constants"
 import { ITokens } from "./interfaces"
 

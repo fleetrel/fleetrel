@@ -1,6 +1,3 @@
-import { ZodValidationException } from "nestjs-zod"
-import { Request, Response } from "express"
-
 import {
   ArgumentsHost,
   Catch,
@@ -9,8 +6,12 @@ import {
   HttpStatus,
   Logger,
 } from "@nestjs/common"
-import { HttpExceptionWithErrorCodeType } from "./http-exception-with-error-code.type"
+import { Request, Response } from "express"
+import { ZodValidationException } from "nestjs-zod"
+
 import { BaseAppException } from "../types"
+
+import { HttpExceptionWithErrorCodeType } from "./http-exception-with-error-code.type"
 
 @Catch(HttpExceptionWithErrorCodeType, ZodValidationException)
 export class HttpExceptionFilter implements ExceptionFilter {

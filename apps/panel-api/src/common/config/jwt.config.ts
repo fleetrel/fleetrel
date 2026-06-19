@@ -5,19 +5,19 @@ export const getJWTConfig = (): JwtModuleAsyncOptions => ({
   imports: [ConfigModule],
   inject: [ConfigService],
   useFactory: (cfg: ConfigService) => ({
-    secret: cfg.getOrThrow("JWT_AUTH_SECRET"),
+    secret: cfg.getOrThrow<string>("JWT_AUTH_SECRET"),
     signOptions: { expiresIn: cfg.getOrThrow("JWT_AUTH_EXPIRES") },
   }),
 })
 
 export const getJWTRefreshSignConfig = (cfg: ConfigService): JwtSignOptions => ({
-  secret: cfg.getOrThrow("JWT_AUTH_REFRESH_SECRET"),
-  expiresIn: cfg.getOrThrow("JWT_AUTH_EXPIRES_REFRESH"),
+  secret: cfg.getOrThrow<string>("JWT_AUTH_REFRESH_SECRET"),
+  expiresIn: cfg.getOrThrow<JwtSignOptions["expiresIn"]>("JWT_AUTH_EXPIRES_REFRESH"),
 })
 
 export const getJWTRefreshVerifyConfig = (cfg: ConfigService): JwtVerifyOptions => ({
-  secret: cfg.getOrThrow("JWT_AUTH_REFRESH_SECRET"),
+  secret: cfg.getOrThrow<string>("JWT_AUTH_REFRESH_SECRET"),
 })
 
 export const getJWTRefreshTokenPepper = (cfg: ConfigService) =>
-  cfg.getOrThrow("REFRESH_TOKEN_PEPPER")
+  cfg.getOrThrow<string>("REFRESH_TOKEN_PEPPER")

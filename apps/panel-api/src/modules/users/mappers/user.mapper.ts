@@ -1,7 +1,8 @@
 import { Injectable } from "@nestjs/common"
+
 import { User } from "../../../common/database"
-import { UserEntity } from "../entities"
 import { UniversalMapper } from "../../../common/mappers"
+import { UserEntity } from "../entities"
 
 const modelToEntity = (model: User): UserEntity => {
   return new UserEntity(model)

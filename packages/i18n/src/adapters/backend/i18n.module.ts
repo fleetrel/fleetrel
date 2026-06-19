@@ -1,20 +1,22 @@
 import { DynamicModule, Global, Module, Scope } from "@nestjs/common"
 import { REQUEST } from "@nestjs/core"
-import { TelemtI18nService } from "./i18n.service"
+
+import { fallbackLocale } from "../../core"
+import type { SupportedLocale } from "../../core/types"
+
 import {
   TELEMT_I18N_DEFAULT_LOCALE,
   TELEMT_I18N_LOCALE,
   TELEMT_I18N_OPTIONS,
 } from "./i18n.constants"
-import type { TelemtI18nModuleOptions } from "./i18n.types"
-import { fallbackLocale } from "../../core"
-import type { SupportedLocale } from "../../core/types"
 import {
   defaultLocaleCookieName,
   defaultLocaleHeaderNames,
-  resolveLocaleFromRequest,
   type I18nRequest,
+  resolveLocaleFromRequest,
 } from "./i18n.request"
+import { TelemtI18nService } from "./i18n.service"
+import type { TelemtI18nModuleOptions } from "./i18n.types"
 
 const createLocaleProvider = () => ({
   provide: TELEMT_I18N_LOCALE,

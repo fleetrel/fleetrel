@@ -1,4 +1,5 @@
 import type { LocaleShape } from "../../core"
+
 import type { panelApiEn } from "./en"
 
 export const panelApiRu: LocaleShape<typeof panelApiEn> = {

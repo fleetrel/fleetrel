@@ -1,4 +1,5 @@
 import "i18next"
+
 import type { defaultNamespace, Resources } from "../../core"
 
 declare module "i18next" {

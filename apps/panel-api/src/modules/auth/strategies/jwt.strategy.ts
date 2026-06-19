@@ -1,13 +1,14 @@
 import { Injectable, UnauthorizedException } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
 import { PassportStrategy } from "@nestjs/passport"
-import { ExtractJwt, Strategy } from "passport-jwt"
 import type { Request } from "express"
-import { IJWTPayload } from "../interfaces"
-import { AUTH_COOKIE } from "../constants"
+import { ExtractJwt, Strategy } from "passport-jwt"
+
 import { IRequestUser } from "../../../common/types"
 import { isFail } from "../../../common/utils"
 import { SessionsService } from "../../sessions"
+import { AUTH_COOKIE } from "../constants"
+import { IJWTPayload } from "../interfaces"
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {

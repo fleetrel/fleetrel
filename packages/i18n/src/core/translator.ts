@@ -1,4 +1,5 @@
 import i18next, { type i18n } from "i18next"
+
 import { defaultNamespace, fallbackLocale, i18nConfig, namespaces } from "./config"
 import { getResources } from "./resources"
 import type { Namespace, NamespacedKey, SupportedLocale, TranslationParams } from "./types"

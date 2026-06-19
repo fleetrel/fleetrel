@@ -1,7 +1,8 @@
 import { Injectable } from "@nestjs/common"
+
 import { AuthSession } from "../../../common/database"
-import { AuthSessionEntity } from "../entities"
 import { UniversalMapper } from "../../../common/mappers"
+import { AuthSessionEntity } from "../entities"
 
 const modelToEntity = (model: AuthSession): AuthSessionEntity => {
   return new AuthSessionEntity(model)

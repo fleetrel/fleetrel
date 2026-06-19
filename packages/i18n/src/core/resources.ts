@@ -1,5 +1,6 @@
-import { namespaces, supportedLocales } from "./config"
 import { resources } from "../locales"
+
+import { namespaces, supportedLocales } from "./config"
 import type { Namespace, Resources, SupportedLocale } from "./types"
 
 export function isSupportedLocale(locale: string): locale is SupportedLocale {
