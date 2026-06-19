@@ -26,9 +26,13 @@ export class SessionsService {
         lastActiveAt: new Date(),
       })
 
+      this.logger.debug(`createSession: session created sid=${dto.sessionId} userId=${dto.userId}`)
       return ok(session)
     } catch (error) {
-      this.logger.error(error)
+      this.logger.error(
+        "createSession failed",
+        error instanceof Error ? error.stack : String(error),
+      )
       return fail(ERRORS.SESSION_ERROR_CREATE)
     }
   }
@@ -41,10 +45,16 @@ export class SessionsService {
   async findActiveSession(sessionId: string): Promise<TResult<AuthSessionEntity>> {
     try {
       const session = await this.authSessionRepository.findById(sessionId)
-      if (!session) return fail(ERRORS.SESSION_NOT_FOUND)
+      if (!session) {
+        this.logger.warn(`findActiveSession: session not found sid=${sessionId}`)
+        return fail(ERRORS.SESSION_NOT_FOUND)
+      }
       return ok(session)
     } catch (error) {
-      this.logger.error(error)
+      this.logger.error(
+        "findActiveSession failed",
+        error instanceof Error ? error.stack : String(error),
+      )
       return fail(ERRORS.SESSION_NOT_FOUND)
     }
   }
@@ -56,11 +66,17 @@ export class SessionsService {
       if (!session) return fail(ERRORS.SESSION_NOT_FOUND)
 
       const isValid = this.safeCompareHashes(this.hashRefreshToken(token), session.refreshTokenHash)
-      if (!isValid) return fail(ERRORS.SESSION_TOKEN_MISMATCH)
+      if (!isValid) {
+        this.logger.warn(`verifyRefreshToken: token mismatch sid=${sessionId}`)
+        return fail(ERRORS.SESSION_TOKEN_MISMATCH)
+      }
 
       return ok(session)
     } catch (error) {
-      this.logger.error(error)
+      this.logger.error(
+        "verifyRefreshToken failed",
+        error instanceof Error ? error.stack : String(error),
+      )
       return fail(ERRORS.SESSION_NOT_FOUND)
     }
   }
@@ -84,10 +100,19 @@ export class SessionsService {
         this.hashRefreshToken(currentToken),
         this.hashRefreshToken(newToken),
       )
-      if (!swapped) return fail(ERRORS.SESSION_TOKEN_MISMATCH)
+      if (!swapped) {
+        this.logger.warn(
+          `verifyAndRotateSession: CAS failed (concurrent refresh?) sid=${sessionId}`,
+        )
+        return fail(ERRORS.SESSION_TOKEN_MISMATCH)
+      }
+      this.logger.debug(`verifyAndRotateSession: token rotated sid=${sessionId}`)
       return ok(undefined)
     } catch (error) {
-      this.logger.error(error)
+      this.logger.error(
+        "verifyAndRotateSession failed",
+        error instanceof Error ? error.stack : String(error),
+      )
       return fail(ERRORS.SESSION_ERROR_CREATE)
     }
   }
@@ -95,12 +120,16 @@ export class SessionsService {
   async revokeSession(sessionId: string): Promise<boolean> {
     try {
       await this.authSessionRepository.deleteById(sessionId)
+      this.logger.debug(`revokeSession: session deleted sid=${sessionId}`)
       return true
     } catch (error) {
+      // P2025 = record not found — session already revoked, not an error
       if (isPrismaError(error) && error.code !== "P2025") {
-        this.logger.error(error)
+        this.logger.error(
+          "revokeSession failed",
+          error instanceof Error ? error.stack : String(error),
+        )
       }
-
       return false
     }
   }

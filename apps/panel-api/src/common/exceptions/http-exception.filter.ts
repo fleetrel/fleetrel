@@ -38,13 +38,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     }
 
     if (exception instanceof ZodValidationException) {
-      this.logger.error({
-        timestamp: new Date().toISOString(),
-        code: errorCode,
-        path: request.url,
-        message: "[ZodValidationException] " + JSON.stringify(exception.getResponse()),
-      } as BaseAppException)
-
+      this.logger.warn(`[ZodValidation] ${request.method} ${request.url}`)
       response.removeHeader("x-powered-by")
       response.status(status).json(exception.getResponse())
     } else {
@@ -55,7 +49,11 @@ export class HttpExceptionFilter implements ExceptionFilter {
         message: errorMessage,
       }
 
-      this.logger.error(data)
+      if (status >= 500) {
+        this.logger.error(`[HTTP ${status}] ${request.method} ${request.url} — ${errorMessage}`)
+      } else {
+        this.logger.warn(`[HTTP ${status}] ${request.method} ${request.url}`)
+      }
       response.status(status).json(data)
     }
   }

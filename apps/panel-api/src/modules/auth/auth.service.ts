@@ -36,9 +36,7 @@ export class AuthService {
       if (isFail(tokens)) return tokens
       return ok(tokens.response)
     } catch (error) {
-      if (error instanceof Error) {
-        this.logger.error(error.message, error.stack)
-      }
+      this.logger.error("signUp failed", error instanceof Error ? error.stack : String(error))
       return fail(ERRORS.CREATE_USER_ERROR)
     }
   }
@@ -47,18 +45,21 @@ export class AuthService {
     try {
       const user = await this.usersService.findUserEntityByEmail(dto.email)
       if (isFail(user)) {
-        this.logger.debug("sign-in failed: user not found")
+        this.logger.warn("signIn: user not found")
         return fail(ERRORS.AUTH_INVALID_CREDENTIALS)
       }
 
       const isValidPassword = await verify(user.response.password, dto.password)
-      if (!isValidPassword) return fail(ERRORS.AUTH_INVALID_CREDENTIALS)
+      if (!isValidPassword) {
+        this.logger.warn(`signIn: invalid password for userId=${user.response.id}`)
+        return fail(ERRORS.AUTH_INVALID_CREDENTIALS)
+      }
 
       const tokens = await this.startSession(user.response.id)
       if (isFail(tokens)) return tokens
       return ok(tokens.response)
     } catch (error) {
-      this.logger.error(error)
+      this.logger.error("signIn failed", error instanceof Error ? error.stack : String(error))
       return fail(ERRORS.AUTH_SIGN_IN_ERROR)
     }
   }
@@ -94,7 +95,10 @@ export class AuthService {
 
       return ok(tokens)
     } catch (error) {
-      this.logger.error(error)
+      this.logger.error(
+        "refreshTokens failed",
+        error instanceof Error ? error.stack : String(error),
+      )
       return fail(ERRORS.AUTH_REFRESH_ERROR)
     }
   }
@@ -112,6 +116,7 @@ export class AuthService {
     if (isFail(session)) return
 
     await this.sessionsService.revokeSession(sessionId)
+    this.logger.debug(`signOut: session revoked sid=${sessionId}`)
   }
 
   private verifyRefreshToken(refreshToken: string): TResult<IJWTPayload> {
@@ -132,7 +137,7 @@ export class AuthService {
 
   private async startSession(userId: string): Promise<TResult<ITokens>> {
     const sessionId = randomUUID()
-    this.logger.debug(`creating auth session, id = ${sessionId}`)
+    this.logger.debug(`startSession: creating session sid=${sessionId} userId=${userId}`)
 
     const tokens = await this.issueTokenPair({ sub: userId, sid: sessionId })
 
@@ -143,6 +148,7 @@ export class AuthService {
     })
     if (isFail(session)) return session
 
+    this.logger.log(`startSession: session started sid=${sessionId} userId=${userId}`)
     return ok(tokens)
   }
 

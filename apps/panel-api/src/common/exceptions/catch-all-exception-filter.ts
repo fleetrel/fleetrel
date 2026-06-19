@@ -46,18 +46,17 @@ export class CatchAllExceptionFilter implements ExceptionFilter {
     }
 
     if (exception instanceof ZodValidationException) {
-      this.logger.error({
-        timestamp: new Date().toISOString(),
-        code: errorCode,
-        path: request.url,
-        message: "[ZodValidationException] " + JSON.stringify(exception.getResponse()),
-      } as BaseAppException)
-
+      this.logger.warn(`[ZodValidation] ${request.method} ${request.url}`)
       response.status(status).json(exception.getResponse())
       return
     }
 
     if (exception instanceof HttpExceptionWithErrorCodeType || exception instanceof HttpException) {
+      if (status >= 500) {
+        this.logger.error(`[HTTP ${status}] ${request.method} ${request.url} — ${errorMessage}`)
+      } else {
+        this.logger.warn(`[HTTP ${status}] ${request.method} ${request.url}`)
+      }
       response.status(status).json({
         timestamp: new Date().toISOString(),
         path: request.url,
@@ -67,7 +66,10 @@ export class CatchAllExceptionFilter implements ExceptionFilter {
       return
     }
 
-    this.logger.error(exception)
+    this.logger.error(
+      `[Unhandled] ${request.method} ${request.url}`,
+      exception instanceof Error ? exception.stack : String(exception),
+    )
 
     response.status(status).json({
       timestamp: new Date().toISOString(),
