@@ -3,6 +3,8 @@ import { ConfigService } from "@nestjs/config"
 import { PrismaPg } from "@prisma/adapter-pg"
 import { Client } from "pg"
 
+import { getDatabaseConfig } from "../config"
+
 import { PrismaClient } from "./generated/client"
 import { formatPgError, getConnectionString } from "./helpers"
 
@@ -12,11 +14,7 @@ export class DatabaseService extends PrismaClient implements OnModuleInit {
   private readonly connectionString: string
 
   constructor(private configService: ConfigService) {
-    const host = configService.get<string>("DATABASE_HOST")!
-    const port = configService.get<number>("DATABASE_PORT")!
-    const database = configService.get<string>("DATABASE_NAME")!
-    const username = configService.get<string>("DATABASE_USER")!
-    const password = configService.get<string>("DATABASE_PASSWORD")!
+    const { username, password, host, port, database } = getDatabaseConfig(configService)
 
     const connectionString = getConnectionString({
       username,
