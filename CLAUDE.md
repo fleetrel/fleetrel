@@ -1,16 +1,12 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 # Fleetrel
 
 Control-plane + web dashboard + agent for managing fleets of remote servers.
 
-## Domain context
-
-<!-- TODO: describe what Fleetrel manages — what the "fleet" is, key workflows,
-     and why operators need the panel + agent model. Fill in once the domain
-     stabilises. -->
-
-Key domain entities: <!-- Node/Agent, Client, FleetGroup, ... — fill in. -->
-
-### Terminology — panel vs agent vs server
+## Terminology — panel vs agent vs server
 
 | Term              | Meaning                                                                                                                      | Where it shows up                          |
 | ----------------- | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
@@ -53,66 +49,6 @@ docker-compose.dev.yml  PostgreSQL + pgAdmin for local dev
 - **Agent transport**: REST/HTTP + gRPC + WebSocket (mix TBD per feature; gRPC and WS for real-time agent ↔ panel)
 - **Queues**: BullMQ (planned — not yet wired)
 - **Code quality**: ESLint 9, Prettier ~3.8, commitlint (conventional commits), husky + lint-staged
-- **Deploy**: Docker (multi-stage, TBD)
-
-## Key conventions
-
-### NX boundaries
-
-Project tags enforce module boundaries — no direct cross-app imports:
-
-| Project             | Tags                       |
-| ------------------- | -------------------------- |
-| `panel-api`         | `scope:panel`, `type:api`  |
-| `agent`             | `scope:agent`, `type:api`  |
-| `panel-ui`          | `scope:panel`, `type:ui`   |
-| `packages/contract` | `scope:shared`, `type:lib` |
-| `packages/i18n`     | `scope:shared`, `type:lib` |
-
-Shared code lives in `packages/*` and is imported via each library's public API (`index.ts`). Never import between `apps/*` directly.
-
-### Prisma
-
-- Schema lives at `apps/panel-api/prisma/schema.prisma`; generated client output is `apps/panel-api/src/common/database/generated` — **do not edit generated files manually**
-- To generate the client after schema changes: `nx run panel-api:generate-types` (or `pnpm postinstall`)
-- To create a migration: `nx run panel-api:prisma -- migrate dev --name <name>` — never run migrations automatically; propose and wait for approval
-- Use `include`/`select` deliberately — no N+1 patterns
-- Wrap multi-step writes in `$transaction` or the CLS `@Transactional()` decorator
-
-### CLS transactions
-
-Use `@Transactional()` from `nestjs-cls/transactional` for service-layer atomicity. The adapter is `@nestjs-cls/transactional-adapter-prisma`. Do not start raw `$transaction` blocks where the CLS decorator already handles the boundary.
-
-### Validation
-
-All request DTOs are `nestjs-zod` schemas (`createZodDto`). The global `ZodValidationPipe` handles validation automatically — do not add `class-validator` decorators alongside Zod schemas.
-
-### Error handling
-
-- `CatchAllExceptionFilter` is the global catch-all registered in `main.ts`
-- Domain errors should be thrown as NestJS `HttpException` subclasses (or custom equivalents)
-- Never silently swallow errors or use bare `catch (_) {}`
-
-### Auth
-
-- JWT tokens are passed via HTTP-only cookies (cookie-parser is enabled globally)
-- `@nestjs/passport` + `passport-jwt` strategy — guards are applied per-controller or per-module
-- Passwords hashed with Argon2
-
-### Contract package
-
-`packages/contract` is the source of truth for shared request/response shapes between `panel-api`, `agent`, and `panel-ui`. Any REST/WebSocket/gRPC payload shape lives here. Changing contract shapes requires updating all consumers in the same patch.
-
-### Logging
-
-Use NestJS `Logger` (class-based, injected per service). Do not log secrets, tokens, credentials, or PII. Structured context (request ID, user ID) should propagate via CLS where available.
-
-### Code style
-
-- No comments that restate what the code does — only architecture decisions, invariants, or non-obvious constraints
-- TSDoc on all exported classes, interfaces, types, and functions
-- Files should not exceed 350–550 lines; split by responsibility within the same module when they do
-- Preserve existing formatting — do not run `prettier --fix` or `eslint --fix` unless explicitly asked; fix only imports broken by your own patch
 
 ## Commands
 
@@ -152,15 +88,183 @@ nx run panel-api:prisma -- migrate dev --name <name>
 
 # Prisma — open Prisma Studio
 nx run panel-api:prisma -- studio
-
-# Run a specific Prisma command
-nx run panel-api:prisma -- <command>
 ```
 
 pgAdmin: http://localhost:5050 (admin@gmail.com / admin in dev)
 
+## Architecture patterns
+
+### Module anatomy
+
+Every feature module follows this vertical slice layout:
+
+```
+modules/<feature>/
+  <feature>.module.ts
+  <feature>.controller.ts
+  <feature>.service.ts
+  dtos/          — Zod-derived DTOs for request/response
+  entities/      — Domain entities (extend BaseEntity)
+  mappers/       — Prisma model ↔ entity conversion
+  repositories/  — DB access layer implementing ICrud<Entity>
+  index.ts
+```
+
+### TResult<T> — service return pattern
+
+Services never throw; they return `TResult<T>` from `common/utils/result.ts`:
+
+```ts
+// constructors
+ok(value) // TResult<T> success
+fail(ERRORS.FOO) // TResult<never> failure
+
+// guards
+isFail(result) // narrows to the failure branch
+```
+
+Controllers call `errorHandler(result)` from `common/helpers/error-handler.helper.ts` to convert a failure into the matching `HttpException` using the error code from `packages/contract/src/constants/errors.constant.ts`. All domain errors must be registered in `ERRORS` before use.
+
+Error response shape (from `BaseAppException`):
+
+```json
+{ "timestamp": "…", "path": "…", "message": "…", "code": "ERROR_CODE" }
+```
+
+### Entities and mappers
+
+- All entities extend `BaseEntity` (`common/entities/base.entity.ts`) — provides `id` (UUID auto-generated), `createdAt`, `updatedAt`, and `isPersisted()`.
+- Repositories implement `ICrud<Entity>` and use `TransactionHost<TransactionalAdapterPrisma>` for DB access.
+- Mappers extend `UniversalMapper<Entity, PrismaModel>` or implement `IMapper<Entity, PrismaModel>`.
+
+### Auth decorators
+
+- `@Public()` — opt a route out of the global `JwtAuthGuard`; routes are authenticated by default.
+- `@ApiAuth()` — adds the Swagger cookie-auth lock icon; apply to every authenticated controller.
+- `@CurrentUser(field?)` — param decorator; injects `IRequestUser` (or a single field) from the JWT strategy.
+
+### NX boundaries
+
+No direct cross-app imports. Project tags:
+
+| Project             | Tags                       |
+| ------------------- | -------------------------- |
+| `panel-api`         | `scope:panel`, `type:api`  |
+| `agent`             | `scope:agent`, `type:api`  |
+| `panel-ui`          | `scope:panel`, `type:ui`   |
+| `packages/contract` | `scope:shared`, `type:lib` |
+| `packages/i18n`     | `scope:shared`, `type:lib` |
+
+Shared code lives in `packages/*` and is imported via each library's `index.ts`. Never import between `apps/*` directly.
+
+## Key conventions
+
+### Prisma
+
+- Schema: `apps/panel-api/prisma/schema.prisma`; generated client output: `apps/panel-api/src/common/database/generated` — do not edit generated files.
+- After schema changes: `nx run panel-api:generate-types`.
+- Migrations: propose and wait for approval, never run automatically.
+- Use `include`/`select` deliberately — no N+1 patterns.
+
+### CLS transactions
+
+Use `@Transactional()` from `@nestjs-cls/transactional` for service-layer atomicity. Do not use raw `$transaction` blocks where the CLS decorator already handles the boundary.
+
+### Validation
+
+All request DTOs are `nestjs-zod` schemas (`createZodDto`). The global `ZodValidationPipe` is the only validation layer — do not add `class-validator` decorators.
+
+### Error handling
+
+- `CatchAllExceptionFilter` is the global catch-all registered in `main.ts`.
+- Domain errors: throw `HttpExceptionWithErrorCodeType` (or a standard NestJS `HttpException` subclass). All error codes live in `packages/contract/src/constants/errors.constant.ts`.
+- Never silently swallow errors or use bare `catch (_) {}`.
+
+### Auth
+
+- JWT access tokens are passed via HTTP-only cookies (`cookie-parser` enabled globally).
+- `passport-jwt` strategy; `JwtAuthGuard` is applied globally — all routes are protected unless marked `@Public()`.
+- Passwords hashed with Argon2. Refresh tokens stored as an HMAC-SHA256 hash (peppered). Token rotation uses a compare-and-swap to prevent TOCTOU races.
+
+### Contract package
+
+`packages/contract` is the source of truth for shared request/response shapes (REST, WebSocket, gRPC). Any payload shape change must update all consumers in the same patch.
+
+### Logging
+
+Use NestJS `Logger` (class-based, per service). Do not log secrets, tokens, credentials, or PII. Propagate structured context (request ID, user ID) via CLS where available.
+
+### Code style
+
+- No comments that restate what the code does — only architecture decisions, invariants, or non-obvious constraints.
+- TSDoc on all exported classes, interfaces, types, and functions.
+- Files should not exceed 350–550 lines; split by responsibility within the same module.
+- Preserve existing formatting — do not run `prettier --fix` or `eslint --fix` unless explicitly asked; fix only imports broken by your own patch.
+- Code, comments, commit messages, identifiers: **English only**.
+
+## Required environment variables
+
+Validated at startup by `configSchema` (`common/config/app-config/config.schema.ts`):
+
+| Variable                   | Required | Default       |
+| -------------------------- | -------- | ------------- |
+| `DATABASE_HOST`            | yes      |               |
+| `DATABASE_PORT`            | yes      |               |
+| `DATABASE_USER`            | yes      |               |
+| `DATABASE_PASSWORD`        | yes      |               |
+| `DATABASE_NAME`            | yes      |               |
+| `JWT_AUTH_SECRET`          | yes      |               |
+| `JWT_AUTH_EXPIRES`         | no       | `10m`         |
+| `JWT_AUTH_REFRESH_SECRET`  | yes      |               |
+| `JWT_AUTH_EXPIRES_REFRESH` | no       | `30d`         |
+| `REFRESH_TOKEN_PEPPER`     | yes      |               |
+| `SWAGGER_ENABLED`          | no       | `false`       |
+| `NODE_ENV`                 | no       | `development` |
+
+## Scope control
+
+**Always in scope when touching a file** (coordinated fixes):
+
+- Non-English comments → rewrite in English
+- Missing TSDoc on exported identifiers in modules that already use TSDoc
+
+**Never in scope without explicit approval:**
+
+- Renaming classes, methods, providers, modules, DTOs, Prisma models/fields, env vars
+- Changing business logic, control flow, or data transformations
+- Adding/removing endpoints, providers, modules, queue handlers, Prisma models/fields
+- Changing DTO shape, validation rules, or any public contract
+- Fixing unrelated lint findings or removing unused code
+
+## Response format for code changes
+
+Every response proposing code changes must have:
+
+**`## Reasoning`** — what, why, which modules/files are affected, risks.
+
+**`## Changes`** — for each file: full repo-relative path in backticks, then the code block.
+
+- Files under 200 lines: return the full file.
+- Files over 200 lines: return only changed functions/methods with 3+ lines of context above and below.
+
+If a change requires a Prisma migration, list the command under `## Migrations`. Never apply migrations automatically.
+
+End with a suggested conventional-commit message.
+
+If you spot issues outside the requested scope, list them under `## Out-of-scope observations`. Do not fix them silently.
+
+## Critical invariants
+
+- Correct `async`/`await` — no unhandled rejections, no silent fire-and-forget
+- NestJS DI scoping and module lifecycle hooks (`onModuleInit`, `onModuleDestroy`, `onApplicationShutdown`)
+- Prisma transaction boundaries and connection handling
+- The `TResult` error-handling style — do not introduce a different pattern
+- No new uncaught exceptions on production paths
+- No logging of secrets, tokens, credentials, or PII
+- No weakening of auth guards, JWT/session validation, or crypto logic
+- No extra DB round-trips, allocations, or blocking sync work in hot paths (request handlers, job processors) without explicit justification
+
 ## Context propagation
 
-- HTTP handlers: always use `@Req() req: Request` context — never `context.Background()` equivalents
-- CLS store (from `nestjs-cls`) carries request-scoped values (user, transaction, request ID) — use `ClsService` to read/write; do not pass these as function arguments through deep call stacks
-- `onModuleInit` / `onModuleDestroy` / `onApplicationShutdown` hooks handle lifecycle — preserve them when restructuring providers
+- CLS store (`nestjs-cls`) carries request-scoped values (user, transaction, request ID) — use `ClsService` to read/write; do not pass these as function arguments through deep call stacks.
+- `onModuleInit` / `onModuleDestroy` / `onApplicationShutdown` hooks handle lifecycle — preserve them when restructuring providers.
