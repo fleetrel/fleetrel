@@ -10,9 +10,7 @@ import {
 } from "@nestjs/common"
 import {
   ApiBadRequestResponse,
-  ApiBearerAuth,
   ApiConflictResponse,
-  ApiCookieAuth,
   ApiCreatedResponse,
   ApiOkResponse,
   ApiOperation,
@@ -23,6 +21,8 @@ import {
 import { Throttle } from "@nestjs/throttler"
 import type { Request, Response } from "express"
 
+import { AUTH_BASE, AUTH_ROUTES, AuthOkResponse } from "@fleetrel/contract"
+
 import { THROTTLE_LIMIT, THROTTLE_TTL_MS } from "../../common/constants"
 import { CurrentUser, Public } from "../../common/decorators"
 import { errorHandler } from "../../common/helpers"
@@ -30,11 +30,10 @@ import { errorHandler } from "../../common/helpers"
 import { AuthService } from "./auth.service"
 import { AuthCookieService } from "./auth-cookie.service"
 import { AUTH_COOKIE } from "./constants"
-import { SignInDto, SignUpDto } from "./dtos"
-import { UserResponseModel } from "./models"
+import { MeResponseDto, SignInDto, SignUpDto } from "./dtos"
 
 @ApiTags("Authentication")
-@Controller("auth")
+@Controller(AUTH_BASE)
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
@@ -43,15 +42,16 @@ export class AuthController {
 
   @Public()
   @Throttle({ default: { ttl: THROTTLE_TTL_MS, limit: THROTTLE_LIMIT.AUTH_STRICT } })
-  @Post("sign-up")
-  @ApiOperation({ summary: "Регистрация нового пользователя" })
-  @ApiCreatedResponse({
-    description: "Пользователь успешно зарегистрирован. Устанавливаются куки.",
-  })
-  @ApiBadRequestResponse({ description: "Невалидные данные в теле запроса." })
-  @ApiConflictResponse({ description: "Пользователь с таким email/логином уже существует." })
-  @ApiTooManyRequestsResponse({ description: "Превышен лимит запросов (Rate Limit)." })
-  async signUp(@Body() dto: SignUpDto, @Res({ passthrough: true }) res: Response) {
+  @Post(AUTH_ROUTES.signUp.segment)
+  @ApiOperation({ summary: AUTH_ROUTES.signUp.summary })
+  @ApiCreatedResponse({ description: "User registered; auth cookies are set." })
+  @ApiBadRequestResponse({ description: "Invalid request body." })
+  @ApiConflictResponse({ description: "A user with this email already exists." })
+  @ApiTooManyRequestsResponse({ description: "Rate limit exceeded." })
+  async signUp(
+    @Body() dto: SignUpDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<AuthOkResponse> {
     const tokens = errorHandler(await this.authService.signUp(dto))
     this.authCookieService.setAuthCookies(res, tokens)
     return { ok: true }
@@ -59,15 +59,16 @@ export class AuthController {
 
   @Public()
   @Throttle({ default: { ttl: THROTTLE_TTL_MS, limit: THROTTLE_LIMIT.AUTH_STRICT } })
-  @Post("sign-in")
-  @ApiOperation({ summary: "Авторизация пользователя (вход)" })
-  @ApiOkResponse({ description: "Успешный вход. Устанавливаются куки." })
-  @ApiBadRequestResponse({
-    description: "Невалидные данные в теле запроса.",
-  })
-  @ApiUnauthorizedResponse({ description: "Неверный email или пароль." })
-  @ApiTooManyRequestsResponse({ description: "Превышен лимит запросов (Rate Limit)." })
-  async signIn(@Body() dto: SignInDto, @Res({ passthrough: true }) res: Response) {
+  @Post(AUTH_ROUTES.signIn.segment)
+  @ApiOperation({ summary: AUTH_ROUTES.signIn.summary })
+  @ApiCreatedResponse({ description: "Signed in; auth cookies are set." })
+  @ApiBadRequestResponse({ description: "Invalid request body." })
+  @ApiUnauthorizedResponse({ description: "Incorrect email or password." })
+  @ApiTooManyRequestsResponse({ description: "Rate limit exceeded." })
+  async signIn(
+    @Body() dto: SignInDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<AuthOkResponse> {
     const tokens = errorHandler(await this.authService.signIn(dto))
     this.authCookieService.setAuthCookies(res, tokens)
     return { ok: true }
@@ -75,13 +76,16 @@ export class AuthController {
 
   @Public()
   @Throttle({ default: { ttl: THROTTLE_TTL_MS, limit: THROTTLE_LIMIT.AUTH_REFRESH } })
-  @Post("refresh")
+  @Post(AUTH_ROUTES.refresh.segment)
   @HttpCode(200)
-  @ApiOperation({ summary: "Обновление access токена" })
-  @ApiOkResponse({ description: "Токены успешно обновлены. Куки перезаписаны." })
-  @ApiUnauthorizedResponse({ description: "Refresh токен отсутствует, истек или невалиден." })
-  @ApiTooManyRequestsResponse({ description: "Превышен лимит запросов (Rate Limit)." })
-  async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+  @ApiOperation({ summary: AUTH_ROUTES.refresh.summary })
+  @ApiOkResponse({ description: "Tokens rotated; auth cookies are overwritten." })
+  @ApiUnauthorizedResponse({ description: "Refresh token is missing, expired, or invalid." })
+  @ApiTooManyRequestsResponse({ description: "Rate limit exceeded." })
+  async refresh(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<AuthOkResponse> {
     const refreshToken = req.cookies?.[AUTH_COOKIE.REFRESH_TOKEN]
     if (!refreshToken) throw new UnauthorizedException()
 
@@ -92,11 +96,14 @@ export class AuthController {
 
   @Public()
   @Throttle({ default: { ttl: THROTTLE_TTL_MS, limit: THROTTLE_LIMIT.AUTH_SIGNOUT } })
-  @Post("sign-out")
-  @ApiOperation({ summary: "Выход из аккаунта (logout)" })
-  @ApiOkResponse({ description: "Успешный выход. Куки очищены." })
-  @ApiTooManyRequestsResponse({ description: "Превышен лимит запросов (Rate Limit)." })
-  async signOut(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+  @Post(AUTH_ROUTES.signOut.segment)
+  @ApiOperation({ summary: AUTH_ROUTES.signOut.summary })
+  @ApiCreatedResponse({ description: "Signed out; auth cookies are cleared." })
+  @ApiTooManyRequestsResponse({ description: "Rate limit exceeded." })
+  async signOut(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<AuthOkResponse> {
     const refreshToken = req.cookies?.[AUTH_COOKIE.REFRESH_TOKEN]
     if (refreshToken) await this.authService.signOut(refreshToken)
 
@@ -104,14 +111,11 @@ export class AuthController {
     return { ok: true }
   }
 
-  @Get("me")
-  @ApiOperation({ summary: "Получение данных текущего пользователя" })
-  @ApiOkResponse({ description: "Данные пользователя.", type: UserResponseModel })
-  @ApiUnauthorizedResponse({
-    description: "Пользователь не авторизован (токен невалиден).",
-    type: UserResponseModel,
-  })
-  async me(@CurrentUser("userId") userId: string) {
+  @Get(AUTH_ROUTES.me.segment)
+  @ApiOperation({ summary: AUTH_ROUTES.me.summary })
+  @ApiOkResponse({ description: "Current user profile.", type: MeResponseDto })
+  @ApiUnauthorizedResponse({ description: "Not authenticated (token is invalid)." })
+  async me(@CurrentUser("userId") userId: string): Promise<MeResponseDto> {
     const result = await this.authService.userInfo(userId)
     return errorHandler(result)
   }

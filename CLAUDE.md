@@ -28,7 +28,7 @@ apps/
   agent/              NestJS agent service (planned — not yet scaffolded)
   panel-ui/           Frontend (planned — framework not decided)
 packages/
-  contract/           Shared API contract types (DTOs, Zod schemas, route shapes)
+  contract/           Framework-agnostic API contract (Zod schemas, types, error registry, route definitions)
   i18n/               Shared i18n resources
 tools/                Workspace-level scripts (generate-types.sh, etc.)
 docker-compose.dev.yml  PostgreSQL + pgAdmin for local dev
@@ -123,7 +123,7 @@ fail(ERRORS.FOO) // TResult<never> failure
 isFail(result) // narrows to the failure branch
 ```
 
-Controllers call `errorHandler(result)` from `common/helpers/error-handler.helper.ts` to convert a failure into the matching `HttpException` using the error code from `packages/contract/src/constants/errors.constant.ts`. All domain errors must be registered in `ERRORS` before use.
+Controllers call `errorHandler(result)` from `common/helpers/error-handler.helper.ts` to convert a failure into the matching `HttpException` using the error registry from `@fleetrel/contract` (`packages/contract/src/errors/errors.ts`). All domain errors must be registered in `ERRORS` before use.
 
 Error response shape (from `BaseAppException`):
 
@@ -177,7 +177,7 @@ All request DTOs are `nestjs-zod` schemas (`createZodDto`). The global `ZodValid
 ### Error handling
 
 - `CatchAllExceptionFilter` is the global catch-all registered in `main.ts`.
-- Domain errors: throw `HttpExceptionWithErrorCodeType` (or a standard NestJS `HttpException` subclass). All error codes live in `packages/contract/src/constants/errors.constant.ts`.
+- Domain errors: throw `HttpExceptionWithErrorCodeType` (or a standard NestJS `HttpException` subclass). All error codes live in the `ERRORS` registry in `packages/contract/src/errors/errors.ts`.
 - Never silently swallow errors or use bare `catch (_) {}`.
 
 ### Auth
@@ -188,7 +188,16 @@ All request DTOs are `nestjs-zod` schemas (`createZodDto`). The global `ZodValid
 
 ### Contract package
 
-`packages/contract` is the source of truth for shared request/response shapes (REST, WebSocket, gRPC). Any payload shape change must update all consumers in the same patch.
+`packages/contract` (`@fleetrel/contract`) is the source of truth for the API wire format, shared by the backend and (future) frontend/agent. Any payload shape change must update all consumers in the same patch.
+
+- **Framework-agnostic**: the only runtime dependency is `zod` (peer). No NestJS, express, fetch, or axios imports — the package is designed for future standalone npm publication as an SDK core.
+- **Structure** (`src/`): layered by transport. `shared/` is the transport-independent layer — `domain/` (entity wire schemas: `userSchema`, `sessionSchema`) and `errors/` (`ERRORS` registry, `ErrorCode`, `getErrorByCode`). `rest/` is the REST transport — `core/` (`API_PREFIX`, `HttpMethod`, `RouteDef`, `defineRoute`, `buildPath`, `Infer*` type helpers, `errorResponseSchema`) plus one directory per API module (`auth/`, `sessions/`) with `*.schemas.ts`, `*.routes.ts`, optional `*.constants.ts`. Layer rules: `shared` imports nothing; transports import only `shared`; transports never import each other. Future transports (`webhooks/`, `ws/`, `grpc/`) get their own top-level directory.
+- **Domain vs transport views**: transport schemas compose `shared/domain` (`meResponseSchema = userSchema`; `sessionItemSchema = sessionSchema.extend({ isCurrent })`) — caller-relative view fields live in the transport layer, not the domain.
+- **Clients build URLs with `buildPath(route, { params, query })`** (`rest/core/path.ts`): substitutes `:param` tokens URL-encoded and serializes the query string; `params`/`query` are typed from the route's request schemas.
+- **Contract = wire format (JSON)**: dates in response schemas are ISO strings (`z.iso.datetime()`), never `Date`. The backend maps `Date -> toISOString()` at the controller/service boundary.
+- **Routes are plain data**: `defineRoute` produces `{ method, base, segment, path, request, responses, errors }`. NestJS decorators consume `base`/`segment` (`@Controller(AUTH_BASE)`, `@Post(AUTH_ROUTES.signIn.segment)`); a future typed client consumes `path`/schemas.
+- **Backend wraps, never redefines**: panel-api DTOs are thin wrappers — `class SignInDto extends createZodDto(signInBodySchema) {}`. Validation rules live only in the contract.
+- **Internal DTOs stay in the backend**: service-layer shapes that never cross the wire (e.g. `CreateUserDto` with a hashed password, `CreateSessionDto` with refresh tokens) must not be added to the contract.
 
 ### Logging
 

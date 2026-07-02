@@ -5,11 +5,13 @@ import cookieParser from "cookie-parser"
 import helmet from "helmet"
 import { ZodValidationPipe } from "nestjs-zod"
 
+import { API_PREFIX } from "@fleetrel/contract"
+
 import { AppModule } from "./app.module"
 import { CatchAllExceptionFilter } from "./common/exceptions"
 import { setupSwagger } from "./common/utils"
 
-const globalPrefix = "/api"
+const globalPrefix = API_PREFIX
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule)

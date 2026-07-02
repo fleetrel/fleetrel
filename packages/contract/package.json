@@ -1,9 +1,20 @@
 {
   "name": "@fleetrel/contract",
-  "version": "0.0.1",
+  "version": "0.1.0",
+  "description": "Framework-agnostic API contract for Fleetrel: Zod schemas, inferred types, error registry, and declarative route definitions.",
   "private": false,
+  "sideEffects": false,
   "main": "./src/index.js",
   "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    }
+  },
+  "peerDependencies": {
+    "zod": "^4.0.0"
+  },
   "dependencies": {
     "tslib": "^2.3.0"
   }

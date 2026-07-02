@@ -6,7 +6,7 @@ import { JwtService } from "@nestjs/jwt"
 import { Transactional } from "@nestjs-cls/transactional"
 import { hash, verify } from "argon2"
 
-import { ERRORS } from "@fleetrel/contract"
+import { ERRORS, MeResponse } from "@fleetrel/contract"
 
 import { getJWTRefreshSignConfig, getJWTRefreshVerifyConfig } from "../../common/config"
 import { fail, isFail, ok, ResultFailure, TResult, unwrap } from "../../common/utils"
@@ -16,7 +16,6 @@ import { UsersService } from "../users"
 import { REFRESH_TOKEN_VERSION } from "./constants"
 import { SignInDto, SignUpDto } from "./dtos"
 import { IJWTPayload, ITokens } from "./interfaces"
-import { UserResponseModel } from "./models"
 
 @Injectable()
 export class AuthService {
@@ -129,11 +128,18 @@ export class AuthService {
     this.logger.debug(`signOut: session revoked sid=${sessionId}`)
   }
 
-  async userInfo(userId: string): Promise<TResult<UserResponseModel>> {
+  /** Returns the current user's profile in the wire format of GET /auth/me. */
+  async userInfo(userId: string): Promise<TResult<MeResponse>> {
     const user = await this.usersService.findUserById(userId)
     if (isFail(user)) return user
 
-    return ok(new UserResponseModel(user.response))
+    const { id, email, createdAt, updatedAt } = user.response
+    return ok({
+      id,
+      email,
+      createdAt: createdAt.toISOString(),
+      updatedAt: updatedAt.toISOString(),
+    })
   }
 
   private verifyRefreshToken(refreshToken: string): TResult<IJWTPayload> {

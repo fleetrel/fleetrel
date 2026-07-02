@@ -1,17 +1,13 @@
 import { InternalServerErrorException } from "@nestjs/common"
 
-import { ERRORS } from "@fleetrel/contract"
+import { getErrorByCode } from "@fleetrel/contract"
 
 import { HttpExceptionWithErrorCodeType } from "../exceptions"
 import { TResult } from "../utils"
 
 export function errorHandler<T>(response: TResult<T>): T {
   if (response.isOk === false) {
-    if (!response.code) {
-      throw new InternalServerErrorException("Unknown error")
-    }
-
-    const errorObject = Object.values(ERRORS).find((error) => error?.code === response.code)
+    const errorObject = response.code ? getErrorByCode(response.code) : undefined
 
     if (!errorObject) {
       throw new InternalServerErrorException("Unknown error")

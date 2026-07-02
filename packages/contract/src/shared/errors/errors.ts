@@ -1,4 +1,21 @@
-export const ERRORS = {
+/** Shape of a single entry in the domain error registry. */
+export interface ApiErrorDef<TCode extends string = string> {
+  code: TCode
+  message: string
+  httpCode: number
+}
+
+/** Enforces at compile time that every registry key equals its entry's `code`. */
+function defineErrors<const T extends { [K in keyof T & string]: ApiErrorDef<K> }>(errors: T): T {
+  return errors
+}
+
+/**
+ * Registry of all domain error codes the panel API can return. Every failure
+ * produced by backend services must reference an entry from this registry;
+ * clients match on `code` to handle specific errors.
+ */
+export const ERRORS = defineErrors({
   // USER
   USER_ALREADY_EXISTS: {
     code: "USER_ALREADY_EXISTS",
@@ -64,4 +81,12 @@ export const ERRORS = {
     message: "Refresh token does not match the active session",
     httpCode: 401,
   },
-} as const satisfies Record<string, { code: string; message: string; httpCode: number }>
+})
+
+/** Union of all registered domain error codes. */
+export type ErrorCode = keyof typeof ERRORS
+
+/** Looks up a registry entry by its error code; `undefined` for unknown codes. */
+export function getErrorByCode(code: string): ApiErrorDef | undefined {
+  return (ERRORS as Record<string, ApiErrorDef>)[code]
+}
