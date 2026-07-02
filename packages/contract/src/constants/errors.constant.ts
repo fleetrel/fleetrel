@@ -49,6 +49,11 @@ export const ERRORS = {
     message: "Session creation error",
     httpCode: 400,
   },
+  SESSION_ERROR_REVOKE: {
+    code: "SESSION_ERROR_REVOKE",
+    message: "Revoke session error",
+    httpCode: 400,
+  },
   SESSION_NOT_FOUND: {
     code: "SESSION_NOT_FOUND",
     message: "Session not found",

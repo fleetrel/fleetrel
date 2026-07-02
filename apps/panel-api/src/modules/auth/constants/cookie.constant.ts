@@ -8,11 +8,12 @@ export const AUTH_COOKIE = {
 } as const
 
 /**
- * Path scope for each cookie. The refresh token is scoped to the refresh
- * endpoint only, so the browser never attaches it to regular API calls.
+ * Path scope for each cookie. The refresh token is scoped to the auth module
+ * only, so the browser never attaches it to regular API calls — but it still
+ * covers every route that needs to read it (refresh, sign-out).
  * Paths include the global `/api` prefix configured in `main.ts`.
  */
 export const AUTH_COOKIE_PATH = {
   ACCESS_TOKEN: "/",
-  REFRESH_TOKEN: "/api/auth/refresh",
+  REFRESH_TOKEN: "/api/auth",
 } as const

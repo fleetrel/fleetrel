@@ -26,6 +26,21 @@ export class AuthSessionRepository implements ICrud<AuthSessionEntity> {
     return true
   }
 
+  public async deleteByIdForSpecificUser(sessionId: string, userId: string): Promise<boolean> {
+    await this.prisma.tx.authSession.delete({ where: { id: sessionId, userId } })
+    return true
+  }
+
+  public async deleteAllExceptForCurrent(
+    currentSessionId: string,
+    userId: string,
+  ): Promise<boolean> {
+    await this.prisma.tx.authSession.deleteMany({
+      where: { userId, NOT: { id: currentSessionId } },
+    })
+    return true
+  }
+
   public async findByCriteria(entity: Partial<AuthSessionEntity>): Promise<AuthSessionEntity[]> {
     const list = await this.prisma.tx.authSession.findMany({ where: entity })
     return this.mapper.fromPrismaModelsToEntities(list)

@@ -3,18 +3,20 @@ import { randomUUID } from "crypto"
 import { Injectable, Logger } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
 import { JwtService } from "@nestjs/jwt"
+import { Transactional } from "@nestjs-cls/transactional"
 import { hash, verify } from "argon2"
 
 import { ERRORS } from "@fleetrel/contract"
 
 import { getJWTRefreshSignConfig, getJWTRefreshVerifyConfig } from "../../common/config"
-import { fail, isFail, ok, TResult } from "../../common/utils"
+import { fail, isFail, ok, ResultFailure, TResult, unwrap } from "../../common/utils"
 import { SessionsService } from "../sessions"
 import { UsersService } from "../users"
 
 import { REFRESH_TOKEN_VERSION } from "./constants"
 import { SignInDto, SignUpDto } from "./dtos"
 import { IJWTPayload, ITokens } from "./interfaces"
+import { UserResponseModel } from "./models"
 
 @Injectable()
 export class AuthService {
@@ -30,19 +32,23 @@ export class AuthService {
   async signUp(dto: SignUpDto): Promise<TResult<ITokens>> {
     try {
       const passwordHash = await hash(dto.password)
-      const newUser = await this.usersService.createUser({
-        email: dto.email,
-        password: passwordHash,
-      })
-      if (isFail(newUser)) return newUser
-
-      const tokens = await this.startSession(newUser.response.id)
-      if (isFail(tokens)) return tokens
-      return ok(tokens.response)
+      return ok(await this.signUpTransactional(dto.email, passwordHash))
     } catch (error) {
+      if (error instanceof ResultFailure) return error.result
+
       this.logger.error("signUp failed", error instanceof Error ? error.stack : String(error))
       return fail(ERRORS.CREATE_USER_ERROR)
     }
+  }
+
+  /**
+   * User creation and session creation must commit or roll back together —
+   * a user left without a session on partial failure is an orphaned account.
+   */
+  @Transactional()
+  private async signUpTransactional(email: string, passwordHash: string): Promise<ITokens> {
+    const newUser = unwrap(await this.usersService.createUser({ email, password: passwordHash }))
+    return unwrap(await this.startSession(newUser.id))
   }
 
   async signIn(dto: SignInDto): Promise<TResult<ITokens>> {
@@ -111,7 +117,7 @@ export class AuthService {
     const payload = this.verifyRefreshToken(refreshToken)
     if (isFail(payload)) return
 
-    const { sid: sessionId } = payload.response
+    const { sid: sessionId, sub: userId } = payload.response
 
     // Verify the token matches the currently stored hash before revoking.
     // A stale rotated-away token has a valid JWT signature but will fail here,
@@ -119,8 +125,15 @@ export class AuthService {
     const session = await this.sessionsService.verifyRefreshToken(sessionId, refreshToken)
     if (isFail(session)) return
 
-    await this.sessionsService.revokeSession(sessionId)
+    await this.sessionsService.revokeSession(sessionId, userId)
     this.logger.debug(`signOut: session revoked sid=${sessionId}`)
+  }
+
+  async userInfo(userId: string): Promise<TResult<UserResponseModel>> {
+    const user = await this.usersService.findUserById(userId)
+    if (isFail(user)) return user
+
+    return ok(new UserResponseModel(user.response))
   }
 
   private verifyRefreshToken(refreshToken: string): TResult<IJWTPayload> {

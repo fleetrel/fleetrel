@@ -1,4 +1,4 @@
-import { createHmac, timingSafeEqual } from "crypto"
+import { createHmac } from "crypto"
 
 import { Injectable, Logger } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
@@ -11,6 +11,7 @@ import { fail, isPrismaError, ok, TResult } from "../../common/utils"
 import { CreateSessionDto } from "./dtos"
 import { AuthSessionEntity } from "./entities"
 import { AuthSessionRepository } from "./repositories"
+import { safeCompareHashes } from "./utils"
 
 @Injectable()
 export class SessionsService {
@@ -69,7 +70,7 @@ export class SessionsService {
       const session = await this.authSessionRepository.findById(sessionId)
       if (!session) return fail(ERRORS.SESSION_NOT_FOUND)
 
-      const isValid = this.safeCompareHashes(this.hashRefreshToken(token), session.refreshTokenHash)
+      const isValid = safeCompareHashes(this.hashRefreshToken(token), session.refreshTokenHash)
       if (!isValid) {
         this.logger.warn(`verifyRefreshToken: token mismatch sid=${sessionId}`)
         return fail(ERRORS.SESSION_TOKEN_MISMATCH)
@@ -121,20 +122,58 @@ export class SessionsService {
     }
   }
 
-  async revokeSession(sessionId: string): Promise<boolean> {
+  async revokeSession(sessionId: string, userId: string): Promise<TResult<boolean>> {
     try {
-      await this.authSessionRepository.deleteById(sessionId)
-      this.logger.debug(`revokeSession: session deleted sid=${sessionId}`)
-      return true
+      const result = await this.authSessionRepository.deleteByIdForSpecificUser(sessionId, userId)
+      if (!result) return fail(ERRORS.SESSION_NOT_FOUND)
+      this.logger.debug(`revokeSession: session deleted sid=${sessionId} sub=${userId}`)
+      return ok(true)
     } catch (error) {
-      // P2025 = record not found — session already revoked, not an error
-      if (isPrismaError(error) && error.code !== "P2025") {
-        this.logger.error(
-          "revokeSession failed",
-          error instanceof Error ? error.stack : String(error),
-        )
+      if (isPrismaError(error) && error.code === "P2025") {
+        return fail(ERRORS.SESSION_NOT_FOUND)
       }
-      return false
+
+      this.logger.error(
+        "revokeSession failed",
+        error instanceof Error ? error.stack : String(error),
+      )
+      return fail(ERRORS.SESSION_ERROR_REVOKE)
+    }
+  }
+
+  async revokeOthers(sessionId: string, userId: string): Promise<TResult<boolean>> {
+    try {
+      const result = await this.authSessionRepository.deleteAllExceptForCurrent(sessionId, userId)
+      if (!result) return fail(ERRORS.SESSION_NOT_FOUND)
+      this.logger.debug(`session all deleted sub=${userId} except for current sid=${sessionId}`)
+      return ok(true)
+    } catch (error) {
+      if (isPrismaError(error) && error.code === "P2025") {
+        return fail(ERRORS.SESSION_NOT_FOUND)
+      }
+
+      this.logger.error(
+        "revokeSession failed",
+        error instanceof Error ? error.stack : String(error),
+      )
+      return fail(ERRORS.SESSION_ERROR_REVOKE)
+    }
+  }
+
+  /**
+   * Finds all active sessions for a user.
+   */
+  async getAllUserSessions(userId: string): Promise<TResult<AuthSessionEntity[]>> {
+    try {
+      const sessions = await this.authSessionRepository.findByCriteria({ userId })
+      this.logger.debug(`getAllUserSessions: found ${sessions.length} sessions userId=${userId}`)
+      return ok(sessions)
+    } catch (error) {
+      this.logger.error(
+        "getAllUserSessions failed",
+        error instanceof Error ? error.stack : String(error),
+      )
+      return fail(ERRORS.SESSION_NOT_FOUND)
     }
   }
 
@@ -142,14 +181,5 @@ export class SessionsService {
     return createHmac("sha256", getJWTRefreshTokenPepper(this.configService))
       .update(token)
       .digest("hex")
-  }
-
-  private safeCompareHashes(a: string, b: string): boolean {
-    const bufA = Buffer.from(a, "hex")
-    const bufB = Buffer.from(b, "hex")
-
-    if (bufA.length !== bufB.length) return false
-
-    return timingSafeEqual(bufA, bufB)
   }
 }

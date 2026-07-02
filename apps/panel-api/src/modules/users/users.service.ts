@@ -6,7 +6,6 @@ import { fail, isPrismaError, ok, TResult } from "../../common/utils"
 
 import { CreateUserDto } from "./dtos"
 import { UserEntity } from "./entities"
-import { UserResponseModel } from "./models"
 import { UserRepository } from "./repositories"
 
 @Injectable()
@@ -15,7 +14,7 @@ export class UsersService {
 
   constructor(private readonly userRepository: UserRepository) {}
 
-  async createUser(dto: CreateUserDto): Promise<TResult<UserResponseModel>> {
+  async createUser(dto: CreateUserDto): Promise<TResult<UserEntity>> {
     try {
       this.logger.debug("createUser: creating user record")
       const result = await this.userRepository.create({
@@ -24,7 +23,7 @@ export class UsersService {
       })
 
       this.logger.log(`createUser: user created userId=${result.id}`)
-      return ok(new UserResponseModel(result))
+      return ok(result)
     } catch (error) {
       if (isPrismaError(error)) {
         if (error.code === "P2002") {
@@ -42,13 +41,13 @@ export class UsersService {
     }
   }
 
-  async findUserById(userId: string): Promise<TResult<UserResponseModel>> {
+  async findUserById(userId: string): Promise<TResult<UserEntity>> {
     const user = await this.userRepository.findById(userId)
     if (!user) {
       this.logger.warn(`findUserById: user not found userId=${userId}`)
       return fail(ERRORS.USER_NOT_FOUND)
     }
-    return ok(new UserResponseModel(user))
+    return ok(user)
   }
 
   async findUserEntityByEmail(email: string): Promise<TResult<UserEntity>> {
