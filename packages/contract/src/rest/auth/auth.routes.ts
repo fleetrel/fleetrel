@@ -19,7 +19,7 @@ export const AUTH_ROUTES = {
     summary: "Register a new user and start a session (sets auth cookies)",
     request: { body: signUpBodySchema },
     responses: { 201: authOkResponseSchema },
-    errors: ["USER_ALREADY_EXISTS", "CREATE_USER_ERROR"],
+    errors: ["AUTH_SIGN_UP_DISABLED", "USER_ALREADY_EXISTS", "CREATE_USER_ERROR"],
   }),
   signIn: defineRoute({
     method: "POST",

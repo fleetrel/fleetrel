@@ -11,7 +11,7 @@ import { ERRORS, MeResponse } from "@fleetrel/contract"
 import { getJWTRefreshSignConfig, getJWTRefreshVerifyConfig } from "../../common/config"
 import { fail, isFail, ok, ResultFailure, TResult, unwrap } from "../../common/utils"
 import { SessionsService } from "../sessions"
-import { UsersService } from "../users"
+import { toUserWire, UsersService } from "../users"
 
 import { REFRESH_TOKEN_VERSION } from "./constants"
 import { SignInDto, SignUpDto } from "./dtos"
@@ -43,10 +43,20 @@ export class AuthService {
   /**
    * User creation and session creation must commit or roll back together —
    * a user left without a session on partial failure is an orphaned account.
+   *
+   * Sign-up only bootstraps the panel owner: once any user exists it is closed.
+   * The check runs under the role-mutation lock so concurrent sign-ups on an
+   * empty database cannot both become owner, and before user creation so a
+   * closed sign-up does not reveal which emails are registered.
    */
   @Transactional()
   private async signUpTransactional(email: string, passwordHash: string): Promise<ITokens> {
-    const newUser = unwrap(await this.usersService.createUser({ email, password: passwordHash }))
+    await this.usersService.lockRoleMutations()
+    if (await this.usersService.hasAnyUser()) unwrap(fail(ERRORS.AUTH_SIGN_UP_DISABLED))
+
+    const newUser = unwrap(
+      await this.usersService.createUser({ email, password: passwordHash, role: "owner" }),
+    )
     return unwrap(await this.startSession(newUser.id))
   }
 
@@ -133,13 +143,7 @@ export class AuthService {
     const user = await this.usersService.findUserById(userId)
     if (isFail(user)) return user
 
-    const { id, email, createdAt, updatedAt } = user.response
-    return ok({
-      id,
-      email,
-      createdAt: createdAt.toISOString(),
-      updatedAt: updatedAt.toISOString(),
-    })
+    return ok(toUserWire(user.response))
   }
 
   private verifyRefreshToken(refreshToken: string): TResult<IJWTPayload> {

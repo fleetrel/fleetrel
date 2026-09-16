@@ -13,6 +13,7 @@ const entityToModel = (entity: UserEntity): User => {
     id: entity.id,
     email: entity.email,
     password: entity.password,
+    role: entity.role,
 
     createdAt: entity.createdAt,
     updatedAt: entity.updatedAt,

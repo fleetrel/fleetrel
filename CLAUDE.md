@@ -142,6 +142,14 @@ Error response shape (from `BaseAppException`):
 - `@Public()` — opt a route out of the global `JwtAuthGuard`; routes are authenticated by default.
 - `@ApiAuth()` — adds the Swagger cookie-auth lock icon; apply to every authenticated controller.
 - `@CurrentUser(field?)` — param decorator; injects `IRequestUser` (or a single field) from the JWT strategy.
+- `@RequirePermissions(...perms)` — restricts a route/controller to roles holding all listed permissions; enforced by the global `PermissionsGuard` (registered right after `JwtAuthGuard`). Routes without it are open to any authenticated operator (self-service: `/auth/me`, `/sessions/*`).
+
+### RBAC
+
+- Roles (`owner > admin > operator > viewer`) and permissions (`resource:action`) live in `packages/contract/src/shared/rbac`; the role → permissions map is static. New feature modules register their permissions there.
+- The role is read from the DB on every request (joined into the session lookup in `JwtStrategy`), never stored in the JWT — role changes apply immediately.
+- Sign-up only bootstraps the first user as `owner`; afterwards it returns `AUTH_SIGN_UP_DISABLED`.
+- Role mutations run under a transaction-scoped advisory lock (`UserRepository.lockRoleMutations`); the panel always keeps at least one owner.
 
 ### NX boundaries
 

@@ -3,7 +3,7 @@ import { createHmac } from "crypto"
 import { Injectable, Logger } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
 
-import { ERRORS } from "@fleetrel/contract"
+import { ERRORS, Role } from "@fleetrel/contract"
 
 import { getJWTRefreshTokenPepper } from "../../common/config"
 import { fail, isPrismaError, ok, TResult } from "../../common/utils"
@@ -58,6 +58,29 @@ export class SessionsService {
     } catch (error) {
       this.logger.error(
         "findActiveSession failed",
+        error instanceof Error ? error.stack : String(error),
+      )
+      return fail(ERRORS.SESSION_NOT_FOUND)
+    }
+  }
+
+  /**
+   * Same contract as `findActiveSession`, but also resolves the session owner's
+   * current role in the same query. Used by the JWT strategy on every request.
+   */
+  async findActiveSessionWithRole(
+    sessionId: string,
+  ): Promise<TResult<{ session: AuthSessionEntity; role: Role }>> {
+    try {
+      const result = await this.authSessionRepository.findByIdWithUserRole(sessionId)
+      if (!result) {
+        this.logger.warn(`findActiveSessionWithRole: session not found sid=${sessionId}`)
+        return fail(ERRORS.SESSION_NOT_FOUND)
+      }
+      return ok(result)
+    } catch (error) {
+      this.logger.error(
+        "findActiveSessionWithRole failed",
         error instanceof Error ? error.stack : String(error),
       )
       return fail(ERRORS.SESSION_NOT_FOUND)

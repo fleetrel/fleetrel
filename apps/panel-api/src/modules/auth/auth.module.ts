@@ -4,7 +4,7 @@ import { JwtModule } from "@nestjs/jwt"
 import { PassportModule } from "@nestjs/passport"
 
 import { getJWTConfig } from "../../common/config"
-import { JwtAuthGuard } from "../../common/guards"
+import { JwtAuthGuard, PermissionsGuard } from "../../common/guards"
 import { SessionsModule } from "../sessions"
 import { UsersModule } from "../users"
 
@@ -22,6 +22,9 @@ import { JwtStrategy } from "./strategies"
     JwtStrategy,
     // Protect every route by default; opt-out per route with `@Public()`.
     { provide: APP_GUARD, useClass: JwtAuthGuard },
+    // Declared after JwtAuthGuard on purpose: global guards run in registration
+    // order, and permission checks need `request.user`.
+    { provide: APP_GUARD, useClass: PermissionsGuard },
   ],
   exports: [AuthService],
 })
