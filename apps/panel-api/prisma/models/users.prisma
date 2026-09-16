@@ -1,7 +1,18 @@
+// Values match the wire format in @fleetrel/contract (`ROLES`), so no mapping is needed.
+enum UserRole {
+    owner
+    admin
+    operator
+    viewer
+
+    @@map("user_role")
+}
+
 model User {
-    id       String @id @default(uuid())
-    email    String @unique @map("email")
-    password String @map("password")
+    id       String   @id @default(uuid())
+    email    String   @unique @map("email")
+    password String   @map("password")
+    role     UserRole @default(viewer) @map("role")
 
     createdAt DateTime @default(now()) @map("created_at")
     updatedAt DateTime @updatedAt @map("updated_at")

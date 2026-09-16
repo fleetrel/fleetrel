@@ -9,11 +9,14 @@ src/
   shared/                — transport-independent layer (depends on nothing)
     domain/              — wire schemas of domain entities (user, session)
     errors/              — ERRORS registry, ErrorCode, getErrorByCode
+    rbac/                — ROLES, PERMISSIONS, ROLE_PERMISSIONS, hasPermissions,
+                           canAssignRole
   rest/                  — REST transport (depends only on shared/)
     core/                — API_PREFIX, HttpMethod, RouteDef, defineRoute,
                            buildPath, Infer* type helpers, errorResponseSchema
     auth/                — auth module: constants, schemas, AUTH_ROUTES
     sessions/            — sessions module: schemas, SESSIONS_ROUTES
+    users/               — users module: schemas, USERS_ROUTES
   index.ts               — re-exports shared + rest
 ```
 

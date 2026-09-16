@@ -32,8 +32,35 @@ export const ERRORS = defineErrors({
     message: "Failed to create user",
     httpCode: 500,
   },
+  USER_ROLE_CHANGE_FORBIDDEN: {
+    code: "USER_ROLE_CHANGE_FORBIDDEN",
+    message: "You cannot assign this role to this user",
+    httpCode: 403,
+  },
+  USER_LAST_OWNER: {
+    code: "USER_LAST_OWNER",
+    message: "The last owner cannot be demoted",
+    httpCode: 409,
+  },
+  USER_ROLE_CHANGE_ERROR: {
+    code: "USER_ROLE_CHANGE_ERROR",
+    message: "Failed to change user role",
+    httpCode: 500,
+  },
+
+  // ACCESS CONTROL
+  PERMISSION_DENIED: {
+    code: "PERMISSION_DENIED",
+    message: "You do not have permission to perform this action",
+    httpCode: 403,
+  },
 
   // AUTH
+  AUTH_SIGN_UP_DISABLED: {
+    code: "AUTH_SIGN_UP_DISABLED",
+    message: "Sign-up is disabled",
+    httpCode: 403,
+  },
   AUTH_SIGN_IN_ERROR: {
     code: "AUTH_SIGN_IN_ERROR",
     message: "Failed to authorization",

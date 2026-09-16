@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common"
 import { TransactionHost } from "@nestjs-cls/transactional"
 import { TransactionalAdapterPrisma } from "@nestjs-cls/transactional-adapter-prisma"
 
-import { PrismaClient } from "../../../common/database"
+import { PrismaClient, UserRole } from "../../../common/database"
 import { ICrud } from "../../../common/types"
 import { EntityCreateInput } from "../../../common/types"
 import { isPrismaError } from "../../../common/utils"
@@ -50,6 +50,23 @@ export class AuthSessionRepository implements ICrud<AuthSessionEntity> {
     const model = await this.prisma.tx.authSession.findUnique({ where: { id } })
     if (!model) return null
     return this.mapper.fromPrismaModelToEntity(model)
+  }
+
+  /**
+   * Loads a session together with its owner's role in a single query — used on
+   * every authenticated request, so it must not add a round-trip.
+   */
+  public async findByIdWithUserRole(
+    id: string,
+  ): Promise<{ session: AuthSessionEntity; role: UserRole } | null> {
+    const model = await this.prisma.tx.authSession.findUnique({
+      where: { id },
+      include: { user: { select: { role: true } } },
+    })
+    if (!model) return null
+
+    const { user, ...session } = model
+    return { session: this.mapper.fromPrismaModelToEntity(session), role: user.role }
   }
 
   public async update(entity: AuthSessionEntity): Promise<AuthSessionEntity | null> {

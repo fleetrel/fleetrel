@@ -31,12 +31,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
    * rejected immediately, instead of staying valid until it expires.
    */
   async validate(payload: IJWTPayload): Promise<IRequestUser> {
-    const session = await this.sessionsService.findActiveSession(payload.sid)
-    if (isFail(session)) throw new UnauthorizedException()
+    const result = await this.sessionsService.findActiveSessionWithRole(payload.sid)
+    if (isFail(result)) throw new UnauthorizedException()
+
+    const { session, role } = result.response
 
     // The session must belong to the user the token claims to authenticate.
-    if (session.response.userId !== payload.sub) throw new UnauthorizedException()
+    if (session.userId !== payload.sub) throw new UnauthorizedException()
 
-    return { userId: payload.sub, sessionId: payload.sid }
+    return { userId: payload.sub, sessionId: payload.sid, role }
   }
 }
